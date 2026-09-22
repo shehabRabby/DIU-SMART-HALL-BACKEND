@@ -23,7 +23,7 @@ router.post(
 
 router.get(
   "/me",
-  auth(Role.ADMIN, Role.CAFEOWNER, Role.STUDENT, Role.SUPER_ADMIN),
+  auth(Role.ADMIN, Role.CANTEEN_OWNER, Role.STUDENT, Role.SUPER_ADMIN),
   AuthController.getMe,
 );
 router.post("/refresh-token", AuthController.refreshToken);
