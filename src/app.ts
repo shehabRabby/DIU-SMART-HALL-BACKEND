@@ -33,7 +33,7 @@ app.use("/api/v1/auth", AuthRoutes);
 app.get("/", async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({
 		success: true,
-		message: "Welcome to DIU SMART HALL API Server! 🚀",
+		message: "Welcome to DIU SMART HALL API Server!",
 		version: "1.0.0",
 		institution: {
 			name: "Daffodil International University",
@@ -45,7 +45,7 @@ app.get("/", async (req: Request, res: Response) => {
 			backend: "Md Shehab Al Rabby",
 			frontend: "Md Sakib Hossain",
 		},
-		serverStatus: "Active & Running Smoothly 🟢",
+		serverStatus: "Active & Running Smoothly",
 		timestamp: new Date().toISOString(),
 	});
 });
