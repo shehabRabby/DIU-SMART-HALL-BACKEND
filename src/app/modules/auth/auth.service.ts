@@ -95,6 +95,12 @@ const loginUser = async (payload: ILoginUserPayload) => {
     throw new Error("User is deleted");
   }
 
+  if (user.password === null && user.googleId !== null) {
+    throw new Error(
+      "User Already Has Account Register With Google try to login with google",
+    );
+  }
+
   const isPasswordMatched = await bcrypt.compare(
     password,
     user.password as string,
@@ -200,6 +206,7 @@ const refreshToken = async (token: string) => {
 
 const googleLogin = async (payload: IGoogleLoginPayload) => {
   let googleIdTokenPayload: TokenPayload | null | undefined = null;
+
   try {
     const ticket = await googleClient.verifyIdToken({
       idToken: payload.idToken,
@@ -232,22 +239,67 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 
   let user = isStudentExistWithGoogleAuth;
 
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        name: googleIdTokenPayload.name,
+  if (!isStudentExistWithGoogleAuth) {
+    const isStudentExistWithCredentials = await prisma.user.findUnique({
+      where: {
         email: googleIdTokenPayload.email,
         role: Role.STUDENT,
-        googleId: googleIdTokenPayload.sub,
-        authProvider: AuthProvider.GOOGLE,
-        student: {
-          create: {
-            name: googleIdTokenPayload.name,
-            email: googleIdTokenPayload.email
-          },
-        },
+        authProvider: AuthProvider.CREDENTIAL,
       },
     });
+
+    if (isStudentExistWithCredentials) {
+      if (!isStudentExistWithCredentials.emailVerified) {
+        throw new Error("Email Not Verified");
+      }
+
+      if (isStudentExistWithCredentials.status === UserStatus.BLOCKED) {
+        throw new Error("User Is Blocked");
+      }
+      if (
+        isStudentExistWithCredentials.isDeleted ||
+        isStudentExistWithCredentials.status === UserStatus.DELETED
+      ) {
+        throw new Error("User Is Deleted");
+      }
+
+      user = await prisma.user.update({
+        where: {
+          id: isStudentExistWithCredentials.id,
+        },
+        data: {
+          googleId: googleIdTokenPayload.sub,
+        },
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          name: googleIdTokenPayload.name,
+          email: googleIdTokenPayload.email,
+          role: Role.STUDENT,
+          googleId: googleIdTokenPayload.sub,
+          authProvider: AuthProvider.GOOGLE,
+          emailVerified: true,
+          student: {
+            create: {
+              name: googleIdTokenPayload.name,
+              email: googleIdTokenPayload.email,
+            },
+          },
+        },
+      });
+    }
+  }
+
+  if (!user) {
+    throw new Error("User Not Found");
+  }
+
+  if (user.status === UserStatus.BLOCKED) {
+    throw new Error("User Is Blocked");
+  }
+  if (user.isDeleted || user.status === UserStatus.DELETED) {
+    throw new Error("User Is Deleted");
   }
 
   const jwtPayload = {
