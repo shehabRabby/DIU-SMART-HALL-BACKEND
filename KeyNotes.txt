@@ -1,0 +1,10 @@
+Google Auth Flow:
+Use 
+-Google-Auth-Library Package
+-Google Cloud Platform (for Client Id)
+
+
+google popUp page -> continue -> sent jwtToken/googleIdToken frontend -> localhost:5000/auth/google -> backend : decode = googleOAuth(googleIdToken)
+where we get : name, email, image, googleId, role, accessToken, refreshToken this info set in cookies Before sent this info we set in Database(First time Google Login)
+
+

@@ -1,0 +1,25 @@
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  CAFEOWNER
+  STUDENT
+}
+//DOCTOR->CAFEWONER
+//PATIENT->STUDENT
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum AuthProvider {
+  GOOGLE
+  CREDENTIAL
+}
