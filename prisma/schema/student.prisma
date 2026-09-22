@@ -1,9 +1,9 @@
 model Student {
-  id String @id @default(uuid(7))
+  id String @id @default(uuid())
 
   name          String
   email         String    @unique
-  studentUniID  String? 
+  studentUniId  String?   @unique
   department    String?   
   contactNumber String?
   address       String?

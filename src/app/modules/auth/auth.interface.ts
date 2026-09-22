@@ -10,8 +10,8 @@ export interface IRegisterStudentPayload {
   email: string;
   password: string;
   student: {
-    studentUniId?: string;
-	department?: string;
+    studentUniId: string; // <-- optional tule dewa holo
+    department?: string;
     contactNumber?: string;
   };
 }

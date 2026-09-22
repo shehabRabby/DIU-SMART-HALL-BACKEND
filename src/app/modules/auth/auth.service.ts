@@ -31,9 +31,21 @@ const registerStudent = async (payload: IRegisterStudentPayload) => {
     throw new Error("User with this email already exists");
   }
 
+  if (studentData?.studentUniId) {
+    const isStudentUniIdExists = await prisma.student.findUnique({
+      where: {
+        studentUniId: studentData.studentUniId,
+      },
+    });
+
+    if (isStudentUniIdExists) {
+      throw new Error("Student with this University ID already exists");
+    }
+  }
+
   const hashedPassword = await bcrypt.hash(password, 8);
 
-  const createdUser = await prisma.user.create({
+const createdUser = await prisma.user.create({
     data: {
       ...payload,
       password: hashedPassword,
@@ -45,7 +57,7 @@ const registerStudent = async (payload: IRegisterStudentPayload) => {
           name,
           email,
           contactNumber: studentData?.contactNumber || "",
-          studentUniID: studentData?.studentUniId || "",
+          studentUniId: studentData?.studentUniId || "",
           department: studentData?.department || "",
         },
       },
