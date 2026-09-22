@@ -13,7 +13,7 @@ export const seedSuperAdmin = async () => {
     });
 
     if (isSuperAdminExist) {
-      console.log("Super Admin Already Exist!");
+      console.log("Super Admin Already Exists!");
       return;
     }
 
@@ -22,7 +22,7 @@ export const seedSuperAdmin = async () => {
     const password = config.super_admin_password;
 
     if (!name || !email || !password) {
-      throw new Error("Super Admin Name,Email,Password Missing in Env file");
+      throw new Error("Super Admin Name, Email, Password Missing in Env File!");
     }
     const hashedPassword = await bcrypt.hash(
       password,
@@ -39,9 +39,9 @@ export const seedSuperAdmin = async () => {
       },
     });
 
-    console.log("SuperAdmin Created ", superAdmin);
+    console.log("Super Admin Created Successfully: ", superAdmin);
   } catch (error) {
-    console.log("Error from seed SuperAdmin", error);
+    console.log("Error Seeding Super Admin: ", error);
     await prisma.user.delete({
       where: {
         email: config.super_admin_email,
@@ -69,7 +69,7 @@ export const seedTesterAdmin = async () => {
 
     if (!name || !email || !password) {
       throw new Error(
-        "Tester Admin Name , Email, Password Missing In Env File!!!",
+        "Tester Admin Name, Email, Password Missing In Env File!",
       );
     }
 
@@ -89,9 +89,9 @@ export const seedTesterAdmin = async () => {
       },
     });
 
-    console.log("Tester Admin Created : ", testerAdmin);
+    console.log("Tester Admin Created Successfully: ", testerAdmin);
   } catch (error) {
-    console.log("Error Seeding Tester Admin : ", error);
+    console.log("Error Seeding Tester Admin: ", error);
 
     await prisma.user.delete({
       where: {
@@ -103,14 +103,14 @@ export const seedTesterAdmin = async () => {
 
 export const seedTesterCanteenOwner = async () => {
   try {
-    const isTesterDoctorExist = await prisma.user.findUnique({
+    const isTesterCanteenOwnerExist = await prisma.user.findUnique({
       where: {
         email: config.tester_canteenOwner_email,
       },
     });
 
-    if (isTesterDoctorExist) {
-      console.log("Tester Doctor Already Exists!");
+    if (isTesterCanteenOwnerExist) {
+      console.log("Tester Canteen Owner Already Exists!");
       return;
     }
 
@@ -120,7 +120,7 @@ export const seedTesterCanteenOwner = async () => {
 
     if (!name || !email || !password) {
       throw new Error(
-        "Tester Doctor Name , Email, Password Missing In Env File!!!",
+        "Tester Canteen Owner Name, Email, Password Missing In Env File!",
       );
     }
 
@@ -129,7 +129,7 @@ export const seedTesterCanteenOwner = async () => {
       Number(config.bcrypt_salt_rounds),
     );
 
-    const testerDoctor = await prisma.user.create({
+    const testerCanteenOwner = await prisma.user.create({
       data: {
         name,
         email,
@@ -140,9 +140,9 @@ export const seedTesterCanteenOwner = async () => {
       },
     });
 
-    console.log("Tester Doctor Created : ", testerDoctor);
+    console.log("Tester Canteen Owner Created Successfully: ", testerCanteenOwner);
   } catch (error) {
-    console.log("Error Seeding Tester Doctor : ", error);
+    console.log("Error Seeding Tester Canteen Owner: ", error);
 
     await prisma.user.delete({
       where: {
