@@ -1,12 +1,26 @@
-import { Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import { Role } from "../../../generated/prisma/enums";
 import { auth } from "../../middleware/checkAuth";
 import { AuthController } from "./auth.controller";
+import { UserValidation } from "./auth.validation";
+import { catchAsync } from "../../utils/catchAsync";
+import z from "zod";
+import { validateRequest } from "../../middleware/validateRequest";
 
 const router = Router();
 
-router.post("/register", AuthController.registerStudent);
-router.post("/login", AuthController.loginUser);
+router.post(
+  "/register",
+  validateRequest(UserValidation.StudentRegistrationZodSchema),
+  AuthController.registerStudent,
+);
+
+router.post(
+  "/login",
+  validateRequest(UserValidation.LoginZodSchema),
+  AuthController.loginUser,
+);
+
 router.get(
   "/me",
   auth(Role.ADMIN, Role.CAFEOWNER, Role.STUDENT, Role.SUPER_ADMIN),

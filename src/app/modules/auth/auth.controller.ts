@@ -5,24 +5,14 @@ import { sendResponse } from "../../utils/sendResponse";
 import type { IRequestUser } from "./auth.interface";
 import { AuthService } from "./auth.service";
 import { z } from "zod";
-import { StudentValidation } from "./auth.validation";
-
-
-
+import { UserValidation } from "./auth.validation";
 
 const registerStudent = catchAsync(async (req: Request, res: Response) => {
-  const payload = StudentValidation.StudentRegistrationZodSchema.safeParse(req.body);
-
-if (!payload.success) {
-  const errorMessage = payload.error.issues
-    .map((issue) => issue.message)
-    .join('. ');
-  throw new Error(errorMessage);
-}
+  const payload = req.body;
 
   console.log(payload);
 
-  const result = await AuthService.registerStudent(payload.data);
+  const result = await AuthService.registerStudent(payload);
 
   const { accessToken, refreshToken, user, student } = result;
 
