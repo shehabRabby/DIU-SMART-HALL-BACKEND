@@ -24,4 +24,11 @@ export default {
   tester_canteenOwner_name: process.env.TESTER_CANTEENOWNER_NAME!,
   tester_canteenOwner_email: process.env.TESTER_CANTEENOWNER_EMAIL!,
   tester_canteenOwner_password: process.env.TESTER_CANTEENOWNER_PASSWORD!,
+  redis_user: process.env.REDIS_USER!,
+  redis_password: process.env.REDIS_PASSWORD!,
+  redis_host: process.env.REDIS_HOST!,
+  redis_port: process.env.REDIS_PORT!,
+  smtp_password:process.env.SMTP_PASSWORD!,
+  smtp_user:process.env.SMTP_USER!,
+  email_sender:process.env.EMAIL_SENDER!,
 };

@@ -8,3 +8,5 @@ google popUp page -> continue -> sent jwtToken/googleIdToken frontend -> localho
 where we get : name, email, image, googleId, role, accessToken, refreshToken this info set in cookies Before sent this info we set in Database(First time Google Login)
 
 
+
+GOOGLE_CLIENT_ID | GOOGLE_SECRET_ID | Redis | SMTP_USER | SMTP_PASSWORD  Come form = shehabalrabby467@gmail.com

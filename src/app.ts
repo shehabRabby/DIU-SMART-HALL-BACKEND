@@ -12,6 +12,8 @@ import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/modules/auth/auth.route";
 import z, { success } from "zod";
+import { redisClient } from "./app/lib/redis";
+import crypto from  "crypto"
 
 const app: Application = express();
 
@@ -31,31 +33,22 @@ app.use(cookieParser());
 
 app.use("/api/v1/auth", AuthRoutes);
 
-app.post("/zod", async (req: Request, res: Response, next: NextFunction) => {
+app.post("/test", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const UserZodSchema = z.object({
-      name: z.string().endsWith("r"),
-      email: z.email(),
-      age: z.number().optional(),
-      isVerified: z.boolean().optional(),
-      books: z.array(z.string()).optional(),
-    });
 
-    const payload = req.body;
+    //6 digit otp 
+    const otp = crypto.randomInt(100000, 1000000)
 
-    const result = UserZodSchema.safeParse(payload);
-
-    if (!result.success) {
-      console.log(result.error);
-    }
-    if (result.success) {
-      console.log(result.data);
-    }
-
+    // await redisClient.set("forget-password-otp: student1@gmail.com", "12345", {
+    //   expiration: {
+    //     type: "EX",
+    //     value: 60,
+    //   },
+    // });
     res.status(httpStatus.OK).json({
       success: true,
-      message: "Welcome to the System Backend",
-      data: result,
+      message: "Welcome to DIU SMART HALL API Server!",
+      data: null,
     });
   } catch (error) {
     console.log(error);
@@ -71,7 +64,7 @@ app.get("/", async (req: Request, res: Response) => {
     version: "1.0.0",
     institution: {
       name: "Daffodil International University",
-      department: "CSE Department",
+      department: "CSE ",
       batch: "65",
       address: "Daffodil Smart City, Ashulia, Savar, Dhaka, Bangladesh",
     },
