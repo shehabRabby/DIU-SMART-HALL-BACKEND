@@ -14,6 +14,7 @@ import { AuthRoutes } from "./app/modules/auth/auth.route";
 import z, { success } from "zod";
 import { redisClient } from "./app/lib/redis";
 import crypto from "crypto";
+import { UserRoutes } from "./app/modules/auth/user/user.route";
 
 const app: Application = express();
 
@@ -30,6 +31,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api/v1/auth", AuthRoutes);
+app.use("/api/v1/user", UserRoutes);
 
 app.post("/demo", async (req: Request, res: Response, next: NextFunction) => {
   try {
