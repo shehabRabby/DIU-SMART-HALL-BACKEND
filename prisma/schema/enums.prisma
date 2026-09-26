@@ -4,8 +4,6 @@ enum Role {
   CANTEEN_OWNER
   STUDENT
 }
-//DOCTOR->CANTEENOWNER
-//PATIENT->STUDENT
 
 enum UserStatus {
   ACTIVE

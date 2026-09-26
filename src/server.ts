@@ -14,23 +14,23 @@ const PORT = config.port;
 const main = async () => {
   try {
     await prisma.$connect();
-    console.log("Connected to the database successfully.");
+    console.log("Database connection established successfully.");
 
     await redisClient.connect();
-    console.log("Redis Connect successfully.");
+    console.log("Redis connection established successfully.");
 
     await transporter.verify();
-    console.log("Nodemailer Connect successfully.");
+    console.log("Nodemailer transporter verified successfully.");
 
     await seedSuperAdmin();
     await seedTesterAdmin();
     await seedTesterCanteenOwner();
 
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      console.log(`DIU Smart Hall Server is running smoothly on port ${PORT}`);
     });
   } catch (error) {
-    console.error("Error starting the server:", error);
+    console.error("Failed to start the server due to an error:", error);
     await prisma.$disconnect();
     process.exit(1);
   }
