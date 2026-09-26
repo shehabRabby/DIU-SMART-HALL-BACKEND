@@ -14,6 +14,33 @@ const registerStudent = catchAsync(async (req: Request, res: Response) => {
 
   const result = await AuthService.registerStudent(payload);
 
+  // const { accessToken, refreshToken, user, student } = result;
+
+  // res.cookie("accessToken", accessToken, {
+  //   httpOnly: true,
+  //   secure: false,
+  //   sameSite: "none",
+  //   maxAge: 1000 * 60 * 60 * 24, //  1 day
+  // });
+  // res.cookie("refreshToken", refreshToken, {
+  //   httpOnly: true,
+  //   secure: false,
+  //   sameSite: "none",
+  //   maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+  // });
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Verification OTP Sent successfully",
+    data: null,
+  });
+});
+
+const verifyStudentEmail = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  console.log(payload);
+  const result = await AuthService.verifyStudentEmail(payload);
   const { accessToken, refreshToken, user, student } = result;
 
   res.cookie("accessToken", accessToken, {
@@ -32,7 +59,7 @@ const registerStudent = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
-    message: "Student registered successfully",
+    message: "Verification OTP Sent successfully",
     data: {
       accessToken,
       refreshToken,
@@ -147,7 +174,6 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
 
@@ -174,6 +200,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 
 export const AuthController = {
   registerStudent,
+  verifyStudentEmail,
   loginUser,
   getMe,
   refreshToken,

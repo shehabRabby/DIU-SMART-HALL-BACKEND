@@ -16,6 +16,7 @@ import type {
   IRegisterStudentPayload,
   IRequestUser,
   IResetPasswordPayload,
+  IVerifyEmailPayload,
 } from "./auth.interface";
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import { googleClient } from "../../lib/googleAuth";
@@ -52,20 +53,114 @@ const registerStudent = async (payload: IRegisterStudentPayload) => {
 
   const hashedPassword = await bcrypt.hash(password, 8);
 
+  const otpKey = `student-registration-otp:${email}`;
+  const otpValue = crypto.randomInt(100000, 1000000).toString();
+  const expirationSeconds = 5 * 60;
+
+  await redisClient.set(otpKey, otpValue, {
+    expiration: {
+      type: "EX",
+      value: expirationSeconds,
+    },
+  });
+
+  const studentRegistrationKey = `student-registration-data: ${email}`;
+  const redisUserDataPayload = {
+    name,
+    email,
+    password: hashedPassword,
+    student: studentData,
+  };
+
+  await redisClient.set(
+    studentRegistrationKey,
+    JSON.stringify(redisUserDataPayload),
+    {
+      expiration: {
+        type: "EX",
+        value: expirationSeconds,
+      },
+    },
+  );
+
+  const tempatePath = path.join(
+    process.cwd(),
+    "src/app/templates/registration-user-otp.ejs",
+  );
+
+  const templateData = {
+    name,
+    email,
+    otp: otpValue,
+    expirationMinutes: expirationSeconds / 60,
+  };
+
+  const html = await ejs.renderFile(tempatePath, templateData);
+
+  await transporter.sendMail({
+    from: config.email_sender,
+    to: email,
+    subject: "Email Verification",
+    html,
+  });
+};
+
+const verifyStudentEmail = async (payload: IVerifyEmailPayload) => {
+  const otp = payload.otp;
+  const email = payload.email.trim().toLowerCase();
+
+  const isUserExists = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (isUserExists?.status === "BLOCKED") {
+    throw new Error("User is Blocked");
+  }
+
+  if (isUserExists?.emailVerified) {
+    throw new Error("Email already verified");
+  }
+
+  if (isUserExists?.isDeleted || isUserExists?.status === "DELETED") {
+    throw new Error("User is Deleted");
+  }
+
+  const otpKey = `student-registration-otp:${email}`;
+  const redisOtp = await redisClient.get(otpKey);
+
+  if (!redisOtp) {
+    throw new Error("Invalid OTP");
+  }
+
+  if (redisOtp !== otp) {
+    throw new Error("OTP Does Not Match");
+  }
+  await redisClient.del(otpKey);
+
+  const studentRegistrationKey = `student-registration-data: ${email}`;
+  const redisStudentData = await redisClient.get(studentRegistrationKey);
+
+  if (!redisStudentData) {
+    throw new Error("User Doesn't Exist!");
+  }
+
+  const studentPayload: IRegisterStudentPayload = JSON.parse(redisStudentData);
+
   const createdUser = await prisma.user.create({
     data: {
-      ...payload,
-      password: hashedPassword,
+      name: studentPayload.name,
+      email: studentPayload.email,
+      password: studentPayload.password,
       role: Role.STUDENT,
       status: UserStatus.ACTIVE,
-      emailVerified: false,
+      emailVerified: true,
       student: {
         create: {
-          name,
-          email,
-          contactNumber: studentData?.contactNumber || "",
-          studentUniId: studentData?.studentUniId || "",
-          department: studentData?.department || "",
+          name: studentPayload.name,
+          email: studentPayload.email,
+          contactNumber: studentPayload?.student?.contactNumber || "",
+          studentUniId: studentPayload?.student?.studentUniId || "",
+          department: studentPayload?.student?.department || "",
         },
       },
     },
@@ -492,6 +587,7 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
 
 export const AuthService = {
   registerStudent,
+  verifyStudentEmail,
   loginUser,
   getMe,
   refreshToken,

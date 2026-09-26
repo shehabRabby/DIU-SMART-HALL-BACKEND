@@ -48,6 +48,15 @@ const StudentRegistrationZodSchema = z.object({
   }),
 });
 
+const StudentEmailVerifyZodSchema = z.object({
+  email: z
+    .string()
+    .min(1, { message: "Email is required!" })
+    .email({ message: "Please provide a valid email address!" }),
+  otp: z.string().length(6),
+});
+
+
 const LoginZodSchema = z.object({
   email: z
     .string()
@@ -74,23 +83,26 @@ const LoginZodSchema = z.object({
 });
 
 const ForgotPasswordZodSchema = z.object({
-    email: z.email()
-})
+  email: z.email(),
+});
 
 const ResetPasswordZodSchema = z.object({
-    email: z.email(),
-    newPassword: z.string()
-        .min(8, "Password Must Minimum 8 Characters Long.")
-        .regex(/[a-z]/, "Password must contain atleast 1 Lowercase Letter")
-        .regex(/[A-Z]/, "Password must contain atleast 1 Uppercase Letter")
+  email: z.email(),
+  newPassword: z
+    .string()
+    .min(8, "Password Must Minimum 8 Characters Long.")
+    .regex(/[a-z]/, "Password must contain atleast 1 Lowercase Letter")
+    .regex(/[A-Z]/, "Password must contain atleast 1 Uppercase Letter")
 
-        .regex(/[0-9]/, "Password must contain atleast 1 Number")
-        .regex(/[^A-Za-z0-9]/, "Password must contain atleast 1 Special Character"),
-    otp : z.string().length(6)
-})
-
+    .regex(/[0-9]/, "Password must contain atleast 1 Number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain atleast 1 Special Character"),
+  otp: z.string().length(6),
+});
 
 export const UserValidation = {
   StudentRegistrationZodSchema,
-  LoginZodSchema,ForgotPasswordZodSchema,ResetPasswordZodSchema
+  StudentEmailVerifyZodSchema,
+  LoginZodSchema,
+  ForgotPasswordZodSchema,
+  ResetPasswordZodSchema,
 };

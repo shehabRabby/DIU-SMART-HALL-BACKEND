@@ -10,10 +10,15 @@ export interface IRegisterStudentPayload {
   email: string;
   password: string;
   student: {
-    studentUniId: string; // <-- optional tule dewa holo
+    studentUniId: string; 
     department?: string;
     contactNumber?: string;
   };
+}
+
+export interface IVerifyEmailPayload {
+  email: string;
+  otp: string
 }
 
 export interface IRequestUser {
