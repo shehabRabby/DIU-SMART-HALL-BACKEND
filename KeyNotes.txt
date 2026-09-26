@@ -9,4 +9,4 @@ where we get : name, email, image, googleId, role, accessToken, refreshToken thi
 
 
 
-GOOGLE_CLIENT_ID | GOOGLE_SECRET_ID | Redis | SMTP_USER | SMTP_PASSWORD  Come form = shehabalrabby467@gmail.com
+GOOGLE_CLIENT_ID | GOOGLE_SECRET_ID | Redis | SMTP_USER | SMTP_PASSWORD | Claudinary |  Come form = shehabalrabby467@gmail.com
