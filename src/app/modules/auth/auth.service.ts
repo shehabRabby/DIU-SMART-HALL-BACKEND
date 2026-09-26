@@ -1,6 +1,5 @@
 import bcrypt from "bcryptjs";
 import type { JwtPayload, SignOptions } from "jsonwebtoken";
-
 import {
   AuthProvider,
   Role,
@@ -36,7 +35,7 @@ const registerStudent = async (payload: IRegisterStudentPayload) => {
   });
 
   if (isUserExists) {
-    throw new Error("User with this email already exists");
+    throw new Error("An account with this email address already exists.");
   }
 
   if (studentData?.studentUniId) {
@@ -47,7 +46,7 @@ const registerStudent = async (payload: IRegisterStudentPayload) => {
     });
 
     if (isStudentUniIdExists) {
-      throw new Error("Student with this University ID already exists");
+      throw new Error("A student with this University ID already exists.");
     }
   }
 
@@ -100,7 +99,7 @@ const registerStudent = async (payload: IRegisterStudentPayload) => {
   await transporter.sendMail({
     from: config.email_sender,
     to: email,
-    subject: "Email Verification",
+    subject: "Verify Your Email - DIU Smart Hall System",
     html,
   });
 };
@@ -114,26 +113,26 @@ const verifyStudentEmail = async (payload: IVerifyEmailPayload) => {
   });
 
   if (isUserExists?.status === "BLOCKED") {
-    throw new Error("User is Blocked");
+    throw new Error("Your account has been blocked.");
   }
 
   if (isUserExists?.emailVerified) {
-    throw new Error("Email already verified");
+    throw new Error("This email is already verified.");
   }
 
   if (isUserExists?.isDeleted || isUserExists?.status === "DELETED") {
-    throw new Error("User is Deleted");
+    throw new Error("Your account has been deleted.");
   }
 
   const otpKey = `student-registration-otp:${email}`;
   const redisOtp = await redisClient.get(otpKey);
 
   if (!redisOtp) {
-    throw new Error("Invalid OTP");
+    throw new Error("Invalid or expired OTP. Please request a new one.");
   }
 
   if (redisOtp !== otp) {
-    throw new Error("OTP Does Not Match");
+    throw new Error("Incorrect OTP. Please check and try again.");
   }
   await redisClient.del(otpKey);
 
@@ -141,7 +140,9 @@ const verifyStudentEmail = async (payload: IVerifyEmailPayload) => {
   const redisStudentData = await redisClient.get(studentRegistrationKey);
 
   if (!redisStudentData) {
-    throw new Error("User Doesn't Exist!");
+    throw new Error(
+      "Registration session expired or data not found. Please register again.",
+    );
   }
 
   const studentPayload: IRegisterStudentPayload = JSON.parse(redisStudentData);
@@ -167,7 +168,28 @@ const verifyStudentEmail = async (payload: IVerifyEmailPayload) => {
     include: { student: true },
   });
 
+  await redisClient.del(studentRegistrationKey);
+
+  const tempatePath = path.join(
+    process.cwd(),
+    "src/app/templates/student-welcome-email.ejs",
+  );
+
+  const templateData = {
+    name: createdUser.name,
+  };
+
+  const html = await ejs.renderFile(tempatePath, templateData);
+
+  await transporter.sendMail({
+    from: config.email_sender,
+    to: email,
+    subject: "Welcome to DIU Smart Hall System",
+    html,
+  });
+
   const { password: _password, student, ...user } = createdUser;
+
   const jwtPayload = {
     userId: user.id,
     name: user.name,
@@ -204,20 +226,20 @@ const loginUser = async (payload: ILoginUserPayload) => {
   });
 
   if (!user) {
-    throw new Error("User not found");
+    throw new Error("No account found with this email address.");
   }
 
   if (user.status === UserStatus.BLOCKED) {
-    throw new Error("User is blocked");
+    throw new Error("Your account has been blocked. Please contact support.");
   }
 
   if (user.isDeleted || user.status === UserStatus.DELETED) {
-    throw new Error("User is deleted");
+    throw new Error("Your account has been deleted.");
   }
 
   if (user.password === null && user.googleId !== null) {
     throw new Error(
-      "User Already Has Account Register With Google try to login with google",
+      "This account was registered using Google. Please log in with Google.",
     );
   }
 
@@ -227,7 +249,7 @@ const loginUser = async (payload: ILoginUserPayload) => {
   );
 
   if (!isPasswordMatched) {
-    throw new Error("Invalid credentials");
+    throw new Error("Incorrect password. Please try again.");
   }
 
   const jwtPayload = {
@@ -269,7 +291,7 @@ const getMe = async (user: IRequestUser) => {
   });
 
   if (!isUserExists) {
-    throw new Error("User not found");
+    throw new Error("User account not found.");
   }
 
   return isUserExists;
@@ -336,20 +358,21 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
     googleIdTokenPayload = ticket.getPayload();
   } catch (error) {
     console.log("Google ID Token Verification Failed", error);
-    throw new Error("Invalid or Expired Google Id Token");
+    throw new Error("Invalid or expired Google ID token.");
   }
 
   if (!googleIdTokenPayload) {
-    throw new Error("Invalid or Expired Google Id Token");
+    throw new Error("Invalid or expired Google ID token.");
   }
   if (!googleIdTokenPayload.email) {
-    throw new Error("Google Email Not Found");
+    throw new Error("Google email not found.");
   }
   if (!googleIdTokenPayload.name) {
-    throw new Error("User Name Not Found");
+    throw new Error("Google user name not found.");
   }
 
-  const isStudentExistWithGoogleAuth = await prisma.user.findUnique({
+  // findFirst used for multi-field search to prevent Prisma validation errors
+  const isStudentExistWithGoogleAuth = await prisma.user.findFirst({
     where: {
       email: googleIdTokenPayload.email,
       role: Role.STUDENT,
@@ -360,7 +383,7 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
   let user = isStudentExistWithGoogleAuth;
 
   if (!isStudentExistWithGoogleAuth) {
-    const isStudentExistWithCredentials = await prisma.user.findUnique({
+    const isStudentExistWithCredentials = await prisma.user.findFirst({
       where: {
         email: googleIdTokenPayload.email,
         role: Role.STUDENT,
@@ -370,17 +393,17 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
 
     if (isStudentExistWithCredentials) {
       if (!isStudentExistWithCredentials.emailVerified) {
-        throw new Error("Email Not Verified");
+        throw new Error("Please verify your email address before logging in with Google.");
       }
 
       if (isStudentExistWithCredentials.status === UserStatus.BLOCKED) {
-        throw new Error("User Is Blocked");
+        throw new Error("Your account has been blocked. Please contact support.");
       }
       if (
         isStudentExistWithCredentials.isDeleted ||
         isStudentExistWithCredentials.status === UserStatus.DELETED
       ) {
-        throw new Error("User Is Deleted");
+        throw new Error("Your account has been deleted.");
       }
 
       user = await prisma.user.update({
@@ -390,6 +413,25 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
         data: {
           googleId: googleIdTokenPayload.sub,
         },
+      });
+
+      // Email Notification for Linking Google to Credential Account
+      const templatePath = path.join(
+        process.cwd(),
+        "src/app/templates/google-link-notification.ejs",
+      );
+
+      const templateData = {
+        name: user.name,
+      };
+
+      const html = await ejs.renderFile(templatePath, templateData);
+
+      await transporter.sendMail({
+        from: config.email_sender,
+        to: user.email,
+        subject: "Security Alert: Google Account Linked to Your Account",
+        html,
       });
     } else {
       user = await prisma.user.create({
@@ -408,18 +450,36 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
           },
         },
       });
+
+      // Welcome email for brand new Google registration
+      const templatePath = path.join(
+        process.cwd(),
+        "src/app/templates/student-welcome-email.ejs",
+      );
+
+      const templateData = {
+        name: user.name,
+      };
+      const html = await ejs.renderFile(templatePath, templateData);
+
+      await transporter.sendMail({
+        from: config.email_sender,
+        to: user.email,
+        subject: "Welcome to DIU Smart Hall System",
+        html,
+      });
     }
   }
 
   if (!user) {
-    throw new Error("User Not Found");
+    throw new Error("User account not found.");
   }
 
   if (user.status === UserStatus.BLOCKED) {
-    throw new Error("User Is Blocked");
+    throw new Error("Your account has been blocked. Please contact support.");
   }
   if (user.isDeleted || user.status === UserStatus.DELETED) {
-    throw new Error("User Is Deleted");
+    throw new Error("Your account has been deleted.");
   }
 
   const jwtPayload = {
@@ -457,23 +517,23 @@ const forgotPassword = async (payload: IForgotPasswordPayload) => {
   });
 
   if (!isUserExist) {
-    throw new Error("User Does Not Exist!");
+    throw new Error("No account found with this email address.");
   }
 
   if (isUserExist.status === "BLOCKED") {
-    throw new Error("User is Blocked");
+    throw new Error("Your account has been blocked. Please contact support.");
   }
 
   if (!isUserExist.emailVerified) {
-    throw new Error("User Not Verified");
+    throw new Error("Please verify your email address first.");
   }
 
   if (isUserExist.isDeleted || isUserExist.status === "DELETED") {
-    throw new Error("User is Deleted");
+    throw new Error("Your account has been deleted.");
   }
 
   if (isUserExist.googleId && isUserExist.authProvider === "GOOGLE") {
-    throw new Error("User Has Account With Google");
+    throw new Error("This account uses Google login. Please sign in with Google.");
   }
 
   const otp = crypto.randomInt(100000, 1000000).toString();
@@ -505,7 +565,7 @@ const forgotPassword = async (payload: IForgotPasswordPayload) => {
   await transporter.sendMail({
     from: config.email_sender,
     to: isUserExist.email,
-    subject: "Forgot Password",
+    subject: "Password Reset OTP - DIU Smart Hall System",
     html,
   });
 };
@@ -520,23 +580,23 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   });
 
   if (!isUserExist) {
-    throw new Error("User Does Not Exist!");
+    throw new Error("No account found with this email address.");
   }
 
   if (isUserExist.status === "BLOCKED") {
-    throw new Error("User is Blocked");
+    throw new Error("Your account has been blocked. Please contact support.");
   }
 
   if (!isUserExist.emailVerified) {
-    throw new Error("User Not Verified");
+    throw new Error("Please verify your email address first.");
   }
 
   if (isUserExist.isDeleted || isUserExist.status === "DELETED") {
-    throw new Error("User is Deleted");
+    throw new Error("Your account has been deleted.");
   }
 
   if (isUserExist.googleId && isUserExist.authProvider === "GOOGLE") {
-    throw new Error("User Has Account With Google");
+    throw new Error("This account uses Google login. Password reset is not applicable.");
   }
 
   const key = `forgor-password-otp:${isUserExist.email}`;
@@ -544,11 +604,11 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   const redisOtp = await redisClient.get(key);
 
   if (!redisOtp) {
-    throw new Error("Invalid OTP");
+    throw new Error("Invalid or expired OTP. Please request a new one.");
   }
 
   if (redisOtp !== otp) {
-    throw new Error("OTP Does Not Match");
+    throw new Error("Incorrect OTP. Please check and try again.");
   }
 
   const hashedNewPassword = await bcrypt.hash(
@@ -580,7 +640,7 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   await transporter.sendMail({
     from: config.email_sender,
     to: isUserExist.email,
-    subject: "Password Changed",
+    subject: "Password Reset Successful - DIU Smart Hall System",
     html,
   });
 };
