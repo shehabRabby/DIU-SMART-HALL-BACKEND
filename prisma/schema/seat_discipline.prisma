@@ -1,6 +1,7 @@
 model SeatApplication {
   id                  String            @id @default(uuid())
   studentUniId        String
+  email               String
   department          String
   personalPhoneNumber String
   parentPhoneNumber   String

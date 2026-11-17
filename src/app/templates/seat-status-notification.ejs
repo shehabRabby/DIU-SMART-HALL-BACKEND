@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title><%= subject %></title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+    <% if (statusType === "SUCCESS") { %>
+      <h2 style="color: #16a34a;"><%= heading %></h2>
+    <% } else if (statusType === "WARNING") { %>
+      <h2 style="color: #d97706;"><%= heading %></h2>
+    <% } else { %>
+      <h2 style="color: #dc2626;"><%= heading %></h2>
+    <% } %>
+
+    <p>Hello <strong><%= name %></strong>,</p>
+    <p><%= message %></p>
+
+    <% if (details && details.length > 0) { %>
+      <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; border-left: 4px solid #2563eb; margin: 16px 0;">
+        <% details.forEach(function(item) { %>
+          <p style="margin: 4px 0;"><strong><%= item.label %>:</strong> <%= item.value %></p>
+        <% }); %>
+      </div>
+    <% } %>
+
+    <p style="color: #64748b; font-size: 0.9em; margin-top: 20px;">If you have any questions, please contact the Hall Administration Office.</p>
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+    <p style="font-size: 0.85em; color: #94a3b8;">DIU Smart Hall Team</p>
+  </div>
+</body>
+</html>

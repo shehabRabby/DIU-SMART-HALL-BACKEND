@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hall Seat Allocated</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+    <h2 style="color: #16a34a;">Congratulations! Your Hall Seat is Allocated</h2>
+    <p>Hello <strong><%= name %></strong>,</p>
+    <p>We are pleased to inform you that your seat allocation on the <strong>DIU Smart Hall System</strong> has been approved.</p>
+    
+    <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; border-left: 4px solid #16a34a; margin: 16px 0;">
+      <p style="margin: 4px 0;"><strong>Hall Name:</strong> <%= hallName %> (<%= hallShortName %>)</p>
+      <p style="margin: 4px 0;"><strong>Floor:</strong> <%= floor === 0 ? "Ground Floor (0)" : "Floor " + floor %></p>
+      <p style="margin: 4px 0;"><strong>Room Number:</strong> <%= roomNumber %></p>
+      <p style="margin: 4px 0;"><strong>Monthly Hall Fee:</strong> <%= monthlyFee %> BDT</p>
+      <% if (adminNote) { %>
+        <p style="margin: 8px 0 0 0;"><strong>Admin Note:</strong> <%= adminNote %></p>
+      <% } %>
+    </div>
+
+    <p>Please report to the Hall Provost Office with your university ID card to complete your check-in formalities.</p>
+    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+    <p style="font-size: 0.85em; color: #94a3b8;">DIU Smart Hall Team</p>
+  </div>
+</body>
+</html>
