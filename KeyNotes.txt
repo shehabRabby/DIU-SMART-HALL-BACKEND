@@ -10,4 +10,7 @@ where we get : name, email, image, googleId, role, accessToken, refreshToken thi
 
 
 GOOGLE_CLIENT_ID | GOOGLE_SECRET_ID | Redis | SMTP_USER | SMTP_PASSWORD | Claudinary |  Come form = shehabalrabby467@gmail.com
-Database = prisma postgrees ,prisma studio
+Database = prisma prisma studio | shehabrabby764@gmail.com 
+OPT sent = shehabrabby764@gmail.com
+
+

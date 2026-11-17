@@ -1,0 +1,47 @@
+model Hall {
+  id                  String   @id @default(uuid())
+  name                String   @unique
+  shortName           String   @unique
+  genderType          Gender
+  totalFloors         Int
+  roomsPerFloor       Int
+  defaultRoomCapacity Int      @default(4)
+  monthlyFee          Float    @default(0)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  rooms                 Room[]
+  students              Student[]
+  allocatedApplications SeatApplication[]   @relation("AllocatedHall")
+  requestedRoomChanges  RoomChangeRequest[] @relation("RequestedTargetHall")
+
+  @@index([genderType], name: "idx_hall_genderType")
+  @@index([isActive], name: "idx_hall_isActive")
+  @@map("halls")
+}
+
+model Room {
+  id            String     @id @default(uuid())
+  roomNumber    String
+  floor         Int
+  capacity      Int        @default(4)
+  occupiedCount Int        @default(0)
+  status        RoomStatus @default(AVAILABLE)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  hallId                String
+  hall                  Hall                @relation(fields: [hallId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  students              Student[]
+  allocatedApplications SeatApplication[]   @relation("AllocatedRoom")
+  currentRoomChanges    RoomChangeRequest[] @relation("CurrentRoom")
+  targetRoomChanges     RoomChangeRequest[] @relation("TargetRoom")
+
+  @@unique([hallId, roomNumber], name: "uq_hall_roomNumber")
+  @@index([hallId, floor], name: "idx_room_hall_floor")
+  @@index([status], name: "idx_room_status")
+  @@map("rooms")
+}

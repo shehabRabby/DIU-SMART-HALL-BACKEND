@@ -1,22 +1,42 @@
 model Student {
-  id String @id @default(uuid())
+  id                String  @id @default(uuid())
+  name              String
+  email             String  @unique
+  studentUniId      String? @unique
+  department        String?
+  contactNumber     String?
+  parentPhoneNumber String?
+  gender            Gender?
+  address           String?
 
-  name          String
-  email         String    @unique
-  studentUniId  String?   @unique
-  department    String?   
-  contactNumber String?
-  address       String?
-  isDeleted     Boolean   @default(false)
-  deletedAt     DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  // Hall & Seat Allocation Status
+  isResident Boolean @default(false)
+  hallId     String?
+  hall       Hall?   @relation(fields: [hallId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  roomId     String?
+  room       Room?   @relation(fields: [roomId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-  //relations
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  // 3-Red-Mark Disciplinary Tracking
+  warningCount Int       @default(0)
+  isExpelled   Boolean   @default(false)
+  expelledAt   DateTime?
+
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  userId             String              @unique
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  seatApplications   SeatApplication[]
+  roomChangeRequests RoomChangeRequest[]
+  warnings           StudentWarning[]
 
   @@index([email], name: "idx_student_email")
   @@index([isDeleted], name: "idx_student_isDeleted")
+  @@index([hallId], name: "idx_student_hallId")
+  @@index([roomId], name: "idx_student_roomId")
+  @@index([isResident], name: "idx_student_isResident")
   @@map("students")
 }

@@ -21,3 +21,21 @@ enum AuthProvider {
   GOOGLE
   CREDENTIAL
 }
+
+enum RoomStatus {
+  AVAILABLE
+  FULL
+  MAINTENANCE
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum WarningStatus {
+  ACTIVE
+  REVOKED
+}

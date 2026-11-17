@@ -1,0 +1,79 @@
+model SeatApplication {
+  id                  String            @id @default(uuid())
+  studentUniId        String
+  department          String
+  personalPhoneNumber String
+  parentPhoneNumber   String
+  gender              Gender
+  previousAddress     String
+  reason              String?
+  status              ApplicationStatus @default(PENDING)
+  adminNote           String?
+  reviewedAt          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  // Relations
+  studentId       String
+  student         Student @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  allocatedHallId String?
+  allocatedHall   Hall?   @relation("AllocatedHall", fields: [allocatedHallId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  allocatedRoomId String?
+  allocatedRoom   Room?   @relation("AllocatedRoom", fields: [allocatedRoomId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  reviewedById    String?
+  reviewedBy      User?   @relation("ReviewedSeatApplications", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([studentId], name: "idx_seat_app_studentId")
+  @@index([status], name: "idx_seat_app_status")
+  @@index([gender], name: "idx_seat_app_gender")
+  @@map("seat_applications")
+}
+
+model RoomChangeRequest {
+  id         String            @id @default(uuid())
+  reason     String
+  status     ApplicationStatus @default(PENDING)
+  adminNote  String?
+  reviewedAt DateTime?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  // Relations
+  studentId     String
+  student       Student @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  currentRoomId String
+  currentRoom   Room    @relation("CurrentRoom", fields: [currentRoomId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  targetHallId  String?
+  targetHall    Hall?   @relation("RequestedTargetHall", fields: [targetHallId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  targetRoomId  String?
+  targetRoom    Room?   @relation("TargetRoom", fields: [targetRoomId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  reviewedById  String?
+  reviewedBy    User?   @relation("ReviewedRoomChanges", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([studentId], name: "idx_room_change_studentId")
+  @@index([status], name: "idx_room_change_status")
+  @@map("room_change_requests")
+}
+
+model StudentWarning {
+  id           String        @id @default(uuid())
+  strikeNumber Int // 1, 2, or 3
+  reason       String
+  status       WarningStatus @default(ACTIVE)
+  revokeReason String?
+  revokedAt    DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relations
+  studentId   String
+  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  issuedById  String
+  issuedBy    User    @relation("IssuedStudentWarnings", fields: [issuedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  revokedById String?
+  revokedBy   User?   @relation("RevokedStudentWarnings", fields: [revokedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([studentId], name: "idx_warning_studentId")
+  @@index([status], name: "idx_warning_status")
+  @@map("student_warnings")
+}

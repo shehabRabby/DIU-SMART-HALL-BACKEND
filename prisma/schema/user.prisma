@@ -15,7 +15,13 @@ model User {
   deletedAt          DateTime?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
-  student            Student?
+
+  // Relations
+  student              Student?
+  reviewedApplications SeatApplication[]   @relation("ReviewedSeatApplications")
+  reviewedRoomChanges  RoomChangeRequest[] @relation("ReviewedRoomChanges")
+  issuedWarnings       StudentWarning[]    @relation("IssuedStudentWarnings")
+  revokedWarnings      StudentWarning[]    @relation("RevokedStudentWarnings")
 
   @@unique([email])
   @@map("users")
