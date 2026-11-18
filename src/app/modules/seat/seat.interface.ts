@@ -14,6 +14,14 @@ export interface IApplySeatPayload {
   reason?: string;
 }
 
+export interface IResidentFilterQuery {
+  hallId?: string;
+  roomId?: string;
+  floor?: number;
+  department?: string;
+  searchTerm?: string;
+}
+
 export interface ISeatApplicationFilterQuery {
   status?: ApplicationStatus;
   gender?: Gender;

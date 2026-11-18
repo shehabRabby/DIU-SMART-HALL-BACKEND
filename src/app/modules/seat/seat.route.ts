@@ -118,4 +118,21 @@ router.post(
   SeatController.cancelSeatByAdmin,
 );
 
+// Resident List (Admin & Super Admin)
+router.get(
+  "/residents",
+  auth(Role.SUPER_ADMIN, Role.ADMIN),
+  SeatController.getAllResidents,
+);
+
+// Student Seat History
+router.get("/my-history", auth(Role.STUDENT), SeatController.getMySeatHistory);
+
+// Cancel Pending Room Change Request (Student)
+router.patch(
+  "/room-change/:requestId/cancel",
+  auth(Role.STUDENT),
+  SeatController.cancelMyRoomChangeRequest,
+);
+
 export const SeatRoutes = router;

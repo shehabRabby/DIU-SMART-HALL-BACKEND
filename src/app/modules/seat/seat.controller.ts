@@ -8,7 +8,6 @@ import {
 } from "./seat.interface";
 import { SeatService } from "./seat.service";
 
-
 // 1. SEAT APPLICATION CONTROLLERS
 
 const applyForSeat = catchAsync(async (req: Request, res: Response) => {
@@ -167,7 +166,6 @@ const directAllocateSeat = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 // 3. ROOM CHANGE CONTROLLERS
 
 const requestRoomChange = catchAsync(async (req: Request, res: Response) => {
@@ -254,7 +252,6 @@ const rejectRoomChange = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 // 4. SEAT CANCELLATION & ANALYTICS
 
 const cancelSeatByStudent = catchAsync(async (req: Request, res: Response) => {
@@ -292,6 +289,47 @@ const getSeatAnalytics = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const cancelMyRoomChangeRequest = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.user!.userId;
+    const { requestId } = req.params;
+    const result = await SeatService.cancelMyRoomChangeRequest(
+      userId,
+      requestId as string,
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Pending room change request cancelled successfully.",
+      data: result,
+    });
+  },
+);
+
+const getAllResidents = catchAsync(async (req: Request, res: Response) => {
+  const result = await SeatService.getAllResidents(req.query);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Hall residents retrieved successfully.",
+    data: result,
+  });
+});
+
+const getMySeatHistory = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user!.userId;
+  const result = await SeatService.getMySeatHistory(userId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Seat allocation and transfer history retrieved successfully.",
+    data: result,
+  });
+});
+
 export const SeatController = {
   applyForSeat,
   getMySeatApplications,
@@ -310,4 +348,7 @@ export const SeatController = {
   cancelSeatByStudent,
   cancelSeatByAdmin,
   getSeatAnalytics,
+  cancelMyRoomChangeRequest,
+  getAllResidents,
+  getMySeatHistory,
 };

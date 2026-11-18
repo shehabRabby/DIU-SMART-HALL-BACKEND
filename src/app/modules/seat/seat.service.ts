@@ -15,6 +15,7 @@ import {
   IRecommendedRoomItem,
   IRejectRoomChangePayload,
   IRejectSeatApplicationPayload,
+  IResidentFilterQuery,
   IRoomChangeFilterQuery,
   ISeatApplicationFilterQuery,
 } from "./seat.interface";
@@ -1488,6 +1489,177 @@ const getSeatAnalytics = async () => {
   };
 };
 
+// 1. STUDENT: Withdraw/Cancel Pending Room Change Request
+const cancelMyRoomChangeRequest = async (userId: string, requestId: string) => {
+  const student = await prisma.student.findUnique({
+    where: { userId },
+  });
+
+  if (!student || student.isDeleted) {
+    throw new Error("Student profile not found.");
+  }
+
+  const request = await prisma.roomChangeRequest.findUnique({
+    where: { id: requestId },
+  });
+
+  if (!request) {
+    throw new Error("Room change request not found.");
+  }
+
+  if (request.studentId !== student.id) {
+    throw new Error("You are not authorized to cancel this request.");
+  }
+
+  if (request.status !== ApplicationStatus.PENDING) {
+    throw new Error(
+      `Cannot cancel a request that has already been ${request.status.toLowerCase()}.`,
+    );
+  }
+
+  return prisma.roomChangeRequest.update({
+    where: { id: requestId },
+    data: {
+      status: ApplicationStatus.CANCELLED,
+    },
+  });
+};
+
+// 2. ADMIN: Get All Current Hall Residents (with filters)
+const getAllResidents = async (query: IResidentFilterQuery) => {
+  const whereClause: Prisma.StudentWhereInput = {
+    isResident: true,
+    isDeleted: false,
+  };
+
+  if (query.hallId) {
+    whereClause.hallId = query.hallId;
+  }
+
+  if (query.roomId) {
+    whereClause.roomId = query.roomId;
+  }
+
+  if (query.department) {
+    whereClause.department = {
+      contains: query.department,
+      mode: "insensitive",
+    };
+  }
+
+  if (query.floor !== undefined && !isNaN(Number(query.floor))) {
+    whereClause.room = {
+      floor: Number(query.floor),
+    };
+  }
+
+  if (query.searchTerm) {
+    whereClause.OR = [
+      { name: { contains: query.searchTerm, mode: "insensitive" } },
+      { studentUniId: { contains: query.searchTerm, mode: "insensitive" } },
+      { email: { contains: query.searchTerm, mode: "insensitive" } },
+      { contactNumber: { contains: query.searchTerm, mode: "insensitive" } },
+    ];
+  }
+
+  const residents = await prisma.student.findMany({
+    where: whereClause,
+    orderBy: [{ hall: { shortName: "asc" } }, { room: { roomNumber: "asc" } }],
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      studentUniId: true,
+      department: true,
+      gender: true,
+      contactNumber: true,
+      parentPhoneNumber: true,
+      warningCount: true,
+      user: {
+        select: {
+          imageUrl: true,
+        },
+      },
+      hall: {
+        select: {
+          id: true,
+          name: true,
+          shortName: true,
+        },
+      },
+      room: {
+        select: {
+          id: true,
+          roomNumber: true,
+          floor: true,
+          capacity: true,
+          occupiedCount: true,
+        },
+      },
+    },
+  });
+
+  return {
+    totalResidents: residents.length,
+    residents,
+  };
+};
+
+// 3. STUDENT: Get Complete Seat & Room Change Timeline History
+const getMySeatHistory = async (userId: string) => {
+  const student = await prisma.student.findUnique({
+    where: { userId },
+    include: {
+      hall: { select: { id: true, name: true, shortName: true } },
+      room: { select: { id: true, roomNumber: true, floor: true } },
+    },
+  });
+
+  if (!student || student.isDeleted) {
+    throw new Error("Student profile not found.");
+  }
+
+  const [applications, roomChanges] = await Promise.all([
+    prisma.seatApplication.findMany({
+      where: { studentId: student.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        allocatedHall: {
+          select: { id: true, name: true, shortName: true, monthlyFee: true },
+        },
+        allocatedRoom: {
+          select: { id: true, roomNumber: true, floor: true },
+        },
+      },
+    }),
+    prisma.roomChangeRequest.findMany({
+      where: { studentId: student.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        currentRoom: {
+          select: {
+            roomNumber: true,
+            floor: true,
+            hall: { select: { name: true, shortName: true } },
+          },
+        },
+        targetHall: { select: { id: true, name: true, shortName: true } },
+        targetRoom: { select: { id: true, roomNumber: true, floor: true } },
+      },
+    }),
+  ]);
+
+  return {
+    currentStatus: {
+      isResident: student.isResident,
+      currentHall: student.hall,
+      currentRoom: student.room,
+    },
+    seatApplications: applications,
+    roomChangeHistory: roomChanges,
+  };
+};
+
 export const SeatService = {
   applyForSeat,
   getMySeatApplications,
@@ -1506,4 +1678,7 @@ export const SeatService = {
   cancelSeatByStudent,
   cancelSeatByAdmin,
   getSeatAnalytics,
+  cancelMyRoomChangeRequest,
+  getAllResidents,
+  getMySeatHistory,
 };
