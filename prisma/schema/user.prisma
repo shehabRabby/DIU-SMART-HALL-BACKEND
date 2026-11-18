@@ -22,6 +22,8 @@ model User {
   reviewedRoomChanges  RoomChangeRequest[] @relation("ReviewedRoomChanges")
   issuedWarnings       StudentWarning[]    @relation("IssuedStudentWarnings")
   revokedWarnings      StudentWarning[]    @relation("RevokedStudentWarnings")
+  reportedIncidents    IncidentReport[]    @relation("ReportedIncidents")
+  resolvedIncidents    IncidentReport[]    @relation("ResolvedIncidents")
 
   @@unique([email])
   @@map("users")

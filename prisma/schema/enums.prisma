@@ -36,6 +36,33 @@ enum ApplicationStatus {
 }
 
 enum WarningStatus {
+  SHOW_CAUSE
   ACTIVE
   REVOKED
+  EXPIRED
+}
+
+enum WarningSeverity {
+  MINOR
+  MODERATE
+  SEVERE
+}
+
+enum IncidentCategory {
+  NOISE_DISTURBANCE
+  ROOMMATE_CONFLICT
+  PROPERTY_DAMAGE
+  UNAUTHORIZED_GUEST
+  LATE_ENTRY
+  CURFEW_VIOLATION
+  DISCIPLINARY_BREACH
+  OTHER
+}
+
+enum IncidentStatus {
+  OPEN
+  MEDIATING
+  RESOLVED
+  ESCALATED
+  DISMISSED
 }

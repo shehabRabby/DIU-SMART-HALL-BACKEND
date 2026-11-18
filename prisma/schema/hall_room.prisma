@@ -16,6 +16,8 @@ model Hall {
   students              Student[]
   allocatedApplications SeatApplication[]   @relation("AllocatedHall")
   requestedRoomChanges  RoomChangeRequest[] @relation("RequestedTargetHall")
+  studentWarnings       StudentWarning[]
+  incidentReports       IncidentReport[]
 
   @@index([genderType], name: "idx_hall_genderType")
   @@index([isActive], name: "idx_hall_isActive")
@@ -39,6 +41,7 @@ model Room {
   allocatedApplications SeatApplication[]   @relation("AllocatedRoom")
   currentRoomChanges    RoomChangeRequest[] @relation("CurrentRoom")
   targetRoomChanges     RoomChangeRequest[] @relation("TargetRoom")
+  incidentReports       IncidentReport[]
 
   @@unique([hallId, roomNumber], name: "uq_hall_roomNumber")
   @@index([hallId, floor], name: "idx_room_hall_floor")

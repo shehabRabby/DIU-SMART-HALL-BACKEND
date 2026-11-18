@@ -32,6 +32,7 @@ model Student {
   seatApplications   SeatApplication[]
   roomChangeRequests RoomChangeRequest[]
   warnings           StudentWarning[]
+  accusedIncidents   IncidentReport[]    @relation("AccusedInIncidents")
 
   @@index([email], name: "idx_student_email")
   @@index([isDeleted], name: "idx_student_isDeleted")

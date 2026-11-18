@@ -57,24 +57,79 @@ model RoomChangeRequest {
 }
 
 model StudentWarning {
-  id           String        @id @default(uuid())
+  id           String           @id @default(uuid())
   strikeNumber Int // 1, 2, or 3
+  category     IncidentCategory @default(DISCIPLINARY_BREACH)
+  severity     WarningSeverity  @default(MINOR)
+  title        String           @default("Disciplinary Warning")
   reason       String
-  status       WarningStatus @default(ACTIVE)
+  status       WarningStatus    @default(ACTIVE)
+
+  // Show-Cause & Student Appeal (Due Process)
+  appealDeadline DateTime?
+  appealText     String?
+  appealedAt     DateTime?
+  reviewNote     String?
+
+  // Property Damage / Fine Tracking
+  fineAmount Float     @default(0)
+  isFinePaid Boolean   @default(false)
+  finePaidAt DateTime?
+
+  // Good Conduct Redemption (Auto-Expiry)
+  expiresAt DateTime?
+
   revokeReason String?
   revokedAt    DateTime?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Relations
   studentId   String
-  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  student     Student         @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  hallId      String?
+  hall        Hall?           @relation(fields: [hallId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  incidentId  String?         @unique
+  incident    IncidentReport? @relation(fields: [incidentId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   issuedById  String
-  issuedBy    User    @relation("IssuedStudentWarnings", fields: [issuedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  issuedBy    User            @relation("IssuedStudentWarnings", fields: [issuedById], references: [id], onDelete: Restrict, onUpdate: Cascade)
   revokedById String?
-  revokedBy   User?   @relation("RevokedStudentWarnings", fields: [revokedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  revokedBy   User?           @relation("RevokedStudentWarnings", fields: [revokedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([studentId], name: "idx_warning_studentId")
+  @@index([hallId], name: "idx_warning_hallId")
   @@index([status], name: "idx_warning_status")
+  @@index([expiresAt], name: "idx_warning_expiresAt")
   @@map("student_warnings")
+}
+
+model IncidentReport {
+  id             String           @id @default(uuid())
+  title          String
+  description    String
+  category       IncidentCategory @default(OTHER)
+  severity       WarningSeverity  @default(MINOR)
+  status         IncidentStatus   @default(OPEN)
+  mediationNotes String?
+  resolvedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  // Relations
+  reportedById     String
+  reportedBy       User            @relation("ReportedIncidents", fields: [reportedById], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  accusedStudentId String
+  accusedStudent   Student         @relation("AccusedInIncidents", fields: [accusedStudentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  hallId           String?
+  hall             Hall?           @relation(fields: [hallId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  roomId           String?
+  room             Room?           @relation(fields: [roomId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  resolvedById     String?
+  resolvedBy       User?           @relation("ResolvedIncidents", fields: [resolvedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  escalatedWarning StudentWarning?
+
+  @@index([accusedStudentId], name: "idx_incident_accusedStudentId")
+  @@index([hallId], name: "idx_incident_hallId")
+  @@index([status], name: "idx_incident_status")
+  @@map("incident_reports")
 }

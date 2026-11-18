@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= subject %></title>
+  <style>
+    .header-default { background-color: #0f172a; }
+    .header-warning { background-color: #b45309; }
+    .header-danger  { background-color: #991b1b; }
+    .header-success { background-color: #15803d; }
+  </style>
+</head>
+<body style="background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 32px 16px; color: #0f172a;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+    
+    <!-- Header -->
+    <div class="<%= headerClass || 'header-default' %>" style="padding: 24px 32px; color: #ffffff;">
+      <p style="margin: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #cbd5e1;">
+        DIU SmartHall Administration
+      </p>
+      <h1 style="margin: 6px 0 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em;">
+        Residence Conduct &amp; Discipline Notice
+      </h1>
+    </div>
+
+    <!-- Body Content -->
+    <div style="padding: 32px;">
+      <!-- Status Badge -->
+      <span style="display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;">
+        <%= noticeType %>
+      </span>
+
+      <p style="margin: 20px 0 12px; font-size: 15px; color: #334155;">
+        Dear <strong style="color: #0f172a;"><%= studentName %></strong><% if (studentUniId) { %> <span style="color: #64748b;">(ID: <%= studentUniId %>)</span><% } %>,
+      </p>
+
+      <h2 style="margin: 0 0 12px; font-size: 18px; font-weight: 700; color: #0f172a;">
+        <%= heading %>
+      </h2>
+
+      <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.625; color: #475569;">
+        <%= message %>
+      </p>
+
+      <!-- Details Card -->
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <% if (hallName) { %>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b; width: 42%;">Hall Residence</td>
+              <td style="padding: 6px 0; font-weight: 600; color: #0f172a;"><%= hallName %></td>
+            </tr>
+          <% } %>
+          <% if (category) { %>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b;">Category</td>
+              <td style="padding: 6px 0; font-weight: 600; color: #0f172a;"><%= category.replace(/_/g, ' ') %></td>
+            </tr>
+          <% } %>
+          <% if (severity) { %>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b;">Severity Level</td>
+              <td style="padding: 6px 0; font-weight: 600; color: #0f172a;"><%= severity %></td>
+            </tr>
+          <% } %>
+          <% if (strikeNumber) { %>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b;">Active Strike Standing</td>
+              <td style="padding: 6px 0; font-weight: 700; color: #dc2626;"><%= strikeNumber %> of 3</td>
+            </tr>
+          <% } %>
+          <% if (fineAmount && fineAmount > 0) { %>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b;">Assessed Fine</td>
+              <td style="padding: 6px 0; font-weight: 700; color: #0f172a;"><%= fineAmount %> BDT</td>
+            </tr>
+          <% } %>
+          <% if (expiresAt) { %>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b;">Good Conduct Redemption</td>
+              <td style="padding: 6px 0; font-weight: 600; color: #15803d;"><%= expiresAt %></td>
+            </tr>
+          <% } %>
+        </table>
+      </div>
+
+      <!-- Appeal Alert Box -->
+      <% if (appealDeadline) { %>
+        <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 6px; padding: 16px; margin-bottom: 24px;">
+          <p style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.03em;">
+            Due Process &amp; Right to Appeal
+          </p>
+          <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #78350f;">
+            You may submit a formal explanation or supporting evidence through the DIU SmartHall portal before
+            <strong><%= appealDeadline %></strong>.
+          </p>
+        </div>
+      <% } %>
+
+      <!-- Policy Note -->
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; font-size: 13px; line-height: 1.5; color: #64748b;">
+        <strong style="color: #475569;">Residence Policy:</strong> Accumulating 3 active strikes results in automatic hall expulsion and immediate seat cancellation. Maintaining good conduct until the redemption date automatically expires active warnings.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f1f5f9; padding: 16px 32px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+      &copy; <%= new Date().getFullYear() %> DIU SmartHall Management System. Automated Administrative Notice.
+    </div>
+  </div>
+</body>
+</html>
