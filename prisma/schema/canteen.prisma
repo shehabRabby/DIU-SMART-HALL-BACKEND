@@ -1,0 +1,227 @@
+model CanteenOwnerProfile {
+  id           String   @id @default(uuid())
+  businessName String
+  contactPhone String
+  isActive     Boolean  @default(true)
+  warningCount Int      @default(0)
+  totalFines   Float    @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations (1 Canteen Owner mapped to 1 Hall)
+  userId String @unique
+  user   User   @relation("CanteenOwnerUser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  hallId String @unique
+  hall   Hall   @relation(fields: [hallId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  menuItems  CanteenMenuItem[]
+  orders     FoodOrder[]
+  complaints FoodComplaint[]
+
+  @@index([hallId], name: "idx_canteen_owner_hallId")
+  @@map("canteen_owner_profiles")
+}
+
+model HallMasterPriceItem {
+  id           String       @id @default(uuid())
+  itemName     String
+  category     FoodCategory
+  portion      FoodPortion  @default(REGULAR)
+  maxAllowedTk Float
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // Relations
+  hallId      String
+  hall        Hall              @relation(fields: [hallId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdById String
+  createdBy   User              @relation("CreatedMasterPrices", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  menuItems   CanteenMenuItem[]
+
+  @@unique([hallId, itemName, portion], name: "uq_hall_master_price_item")
+  @@index([hallId], name: "idx_master_price_hallId")
+  @@map("hall_master_price_items")
+}
+
+model CanteenMenuItem {
+  id             String             @id @default(uuid())
+  name           String
+  description    String?
+  imageUrl       String?
+  category       FoodCategory
+  portion        FoodPortion        @default(REGULAR)
+  price          Float
+  isRegular      Boolean            @default(true)
+  isSpecial      Boolean            @default(false)
+  availableDate  DateTime?
+  availableSlots MealSlot[]
+  isCombo        Boolean            @default(false)
+  comboDetails   Json               @default("[]") // e.g. [{ "itemName": "Rice Full", "qty": 1 }]
+  maxQuantity    Int?               // Optional stock cap per slot/day
+  soldCount      Int                @default(0)
+  isAvailable    Boolean            @default(true)
+  approvalStatus MenuApprovalStatus @default(APPROVED)
+  adminNote      String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  // Relations
+  hallId        String
+  hall          Hall                 @relation(fields: [hallId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  canteenId     String
+  canteen       CanteenOwnerProfile  @relation(fields: [canteenId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  masterPriceId String?
+  masterPrice   HallMasterPriceItem? @relation(fields: [masterPriceId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  approvedById  String?
+  approvedBy    User?                @relation("ApprovedMenuItems", fields: [approvedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  orderItems FoodOrderItem[]
+  reviews    MealReview[]
+
+  @@index([hallId, isAvailable, approvalStatus], name: "idx_menu_hall_available")
+  @@index([canteenId], name: "idx_menu_canteenId")
+  @@map("canteen_menu_items")
+}
+
+model FoodOrder {
+  id            String            @id @default(uuid())
+  orderCode     String            @unique // e.g. DIU-FD-849201
+  qrToken       String            @unique // Cryptographic HMAC-signed token
+  pickupPin     String            // 4-digit pickup PIN
+  mealDate      DateTime          // Target meal date (normalized to UTC midnight)
+  mealSlot      MealSlot
+  totalAmount   Float
+  paymentMethod FoodPaymentMethod
+  paymentStatus FoodPaymentStatus @default(UNPAID)
+  orderStatus   FoodOrderStatus   @default(PENDING_PAYMENT)
+  tokenStatus   TokenStatus       @default(ISSUED)
+
+  // Timestamps & Security Audit
+  paidAt       DateTime?
+  consumedAt   DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  studentId String
+  student   Student             @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  hallId    String
+  hall      Hall                @relation(fields: [hallId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  canteenId String
+  canteen   CanteenOwnerProfile @relation(fields: [canteenId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  items        FoodOrderItem[]
+  transactions PaymentTransaction[]
+  reviews      MealReview[]
+  complaints   FoodComplaint[]
+
+  @@index([studentId, mealDate], name: "idx_food_order_student_date")
+  @@index([hallId, mealDate, mealSlot], name: "idx_food_order_hall_slot")
+  @@index([canteenId, orderStatus], name: "idx_food_order_canteen_status")
+  @@map("food_orders")
+}
+
+model FoodOrderItem {
+  id        String      @id @default(uuid())
+  itemName  String      // Price & name snapshot locked at order time
+  portion   FoodPortion
+  quantity  Int
+  unitPrice Float
+  subtotal  Float
+
+  // Relations
+  orderId    String
+  order      FoodOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  menuItemId String
+  menuItem   CanteenMenuItem @relation(fields: [menuItemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([orderId], name: "idx_order_item_orderId")
+  @@map("food_order_items")
+}
+
+model PaymentTransaction {
+  id            String            @id @default(uuid())
+  tranId        String            @unique // Unique merchant transaction ID
+  gateway       FoodPaymentMethod // BKASH, NAGAD, STRIPE
+  gatewayRefId  String?           @unique // trxID from bKash/Nagad or payment_intent from Stripe
+  amount        Float
+  currency      String            @default("BDT")
+  status        FoodPaymentStatus @default(UNPAID)
+  rawResponse   Json?
+  verifiedAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relations
+  orderId   String
+  order     FoodOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  studentId String
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([orderId], name: "idx_payment_tx_orderId")
+  @@index([studentId], name: "idx_payment_tx_studentId")
+  @@map("payment_transactions")
+}
+
+model CanteenWallet {
+  id               String    @id @default(uuid())
+  balance          Float     @default(0)
+  noShowCount      Int       @default(0)
+  dueBlockedUntil  DateTime?
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  studentId String  @unique
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("canteen_wallets")
+}
+
+model MealReview {
+  id        String   @id @default(uuid())
+  rating    Int      // 1 to 5 (Verified buyers only)
+  comment   String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  orderId    String
+  order      FoodOrder       @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  menuItemId String
+  menuItem   CanteenMenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  studentId  String
+  student    Student         @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([orderId, menuItemId], name: "uq_verified_order_item_review")
+  @@index([menuItemId], name: "idx_review_menuItemId")
+  @@map("meal_reviews")
+}
+
+model FoodComplaint {
+  id           String          @id @default(uuid())
+  title        String
+  description  String
+  evidenceUrls Json            @default("[]") // Photo proof URLs
+  status       ComplaintStatus @default(PENDING)
+  adminNote    String?
+  fineAmount   Float           @default(0)
+  resolvedAt   DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // Relations
+  orderId      String
+  order        FoodOrder           @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  studentId    String
+  student      Student             @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  canteenId    String
+  canteen      CanteenOwnerProfile @relation(fields: [canteenId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reviewedById String?
+  reviewedBy   User?               @relation("ReviewedFoodComplaints", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([canteenId, status], name: "idx_food_complaint_canteen_status")
+  @@index([studentId], name: "idx_food_complaint_studentId")
+  @@map("food_complaints")
+}

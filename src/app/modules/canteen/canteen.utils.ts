@@ -1,0 +1,162 @@
+import crypto from "crypto";
+import { MealSlot } from "../../../generated/prisma/enums";
+import config from "../../config";
+
+const DHAKA_OFFSET_MS = 6 * 60 * 60 * 1000; // UTC+6 (Bangladesh Standard Time)
+
+/**
+ * Normalize a date string (e.g., "2026-11-24") into UTC midnight (00:00:00.000Z)
+ * so database @db.Date / DateTime comparisons remain timezone-consistent.
+ */
+export const normalizeMealDate = (dateInput: string | Date): Date => {
+  const parsed = new Date(dateInput);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error("Invalid meal date format provided.");
+  }
+  const yyyy = parsed.getUTCFullYear();
+  const mm = String(parsed.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(parsed.getUTCDate()).padStart(2, "0");
+  return new Date(`${yyyy}-${mm}-${dd}T00:00:00.000Z`);
+};
+
+/**
+ * Returns exact UTC timestamps for a given MealDate & MealSlot in Bangladesh Time (UTC+6):
+ * - BREAKFAST: Serving 07:00 - 11:30 | Cut-off 01:00 (6 hours prior)
+ * - LUNCH:     Serving 12:00 - 17:00 | Cut-off 06:00 (6 hours prior)
+ * - DINNER:    Serving 19:00 - 23:00 | Cut-off 13:00 (6 hours prior)
+ */
+export const getSlotScheduleWindows = (mealDate: Date, slot: MealSlot) => {
+  const normalized = normalizeMealDate(mealDate);
+  // Base UTC midnight of that calendar date
+  const baseMidnightUtcMs = normalized.getTime();
+
+  // Convert local Dhaka hours on that date to exact UTC epoch milliseconds
+  const dhakaTimeToUtc = (hour: number, minute: number) =>
+    baseMidnightUtcMs + (hour * 60 + minute) * 60 * 1000 - DHAKA_OFFSET_MS;
+
+  switch (slot) {
+    case MealSlot.BREAKFAST:
+      return {
+        cutoffAt: new Date(dhakaTimeToUtc(1, 0)), // 01:00 AM BDT
+        servingStartAt: new Date(dhakaTimeToUtc(7, 0)), // 07:00 AM BDT
+        servingEndAt: new Date(dhakaTimeToUtc(11, 30)), // 11:30 AM BDT
+        label: "07:00 AM - 11:30 AM",
+      };
+    case MealSlot.LUNCH:
+      return {
+        cutoffAt: new Date(dhakaTimeToUtc(6, 0)), // 06:00 AM BDT
+        servingStartAt: new Date(dhakaTimeToUtc(12, 0)), // 12:00 PM BDT
+        servingEndAt: new Date(dhakaTimeToUtc(17, 0)), // 05:00 PM BDT
+        label: "12:00 PM - 05:00 PM",
+      };
+    case MealSlot.DINNER:
+      return {
+        cutoffAt: new Date(dhakaTimeToUtc(13, 0)), // 01:00 PM BDT
+        servingStartAt: new Date(dhakaTimeToUtc(19, 0)), // 07:00 PM BDT
+        servingEndAt: new Date(dhakaTimeToUtc(23, 0)), // 11:00 PM BDT
+        label: "07:00 PM - 11:00 PM",
+      };
+  }
+};
+
+/**
+ * Guard 1: Enforce Minimum 6-Hour Kitchen Preparation Lead Time
+ */
+export const assertBeforeCutoffDeadline = (mealDate: Date, slot: MealSlot) => {
+  const now = new Date();
+  const schedule = getSlotScheduleWindows(mealDate, slot);
+
+  if (now >= schedule.cutoffAt) {
+    throw new Error(
+      `Pre-order closed for ${slot}. Orders must be placed at least 6 hours before serving (${schedule.label}).`,
+    );
+  }
+  return schedule;
+};
+
+/**
+ * Guard 2: Enforce Active Serving Window at Counter Redemption
+ */
+export const assertWithinServingWindow = (mealDate: Date, slot: MealSlot) => {
+  const now = new Date();
+  const schedule = getSlotScheduleWindows(mealDate, slot);
+
+  if (now < schedule.servingStartAt) {
+    throw new Error(
+      `Too early! ${slot} serving starts at ${schedule.label.split(" - ")[0]}.`,
+    );
+  }
+  if (now > schedule.servingEndAt) {
+    throw new Error(
+      `Meal slip expired! ${slot} serving window (${schedule.label}) has already ended.`,
+    );
+  }
+  return schedule;
+};
+
+/**
+ * Generate Unique Order Code (e.g., DIU-FD-849201), 4-Digit PIN & HMAC-Signed QR Token
+ */
+const getSigningSecret = (): string => {
+  return (
+    process.env.CANTEEN_QR_SECRET ||
+    (config as unknown as { jwt_access_secret?: string }).jwt_access_secret ||
+    "DIU_SMARTHALL_CANTEEN_HMAC_FALLBACK_2026"
+  );
+};
+
+export const generateOrderSecurityCredentials = (
+  studentId: string,
+  hallId: string,
+  mealDate: Date,
+  slot: MealSlot,
+) => {
+  const randomDigits = crypto.randomInt(100000, 999999);
+  const orderCode = `DIU-FD-${randomDigits}`;
+  const pickupPin = String(crypto.randomInt(1000, 9999));
+  const nonce = crypto.randomBytes(12).toString("hex");
+
+  const payload = `${orderCode}|${studentId}|${hallId}|${mealDate.toISOString()}|${slot}|${nonce}`;
+  const signature = crypto
+    .createHmac("sha256", getSigningSecret())
+    .update(payload)
+    .digest("hex")
+    .slice(0, 24);
+
+  const qrToken = `${orderCode}.${nonce}.${signature}`;
+
+  return {
+    orderCode,
+    pickupPin,
+    qrToken,
+  };
+};
+
+/**
+ * Cryptographic Signature Integrity Check before Database Lookup
+ */
+export const verifyQrTokenSignature = (
+  qrToken: string,
+  expectedStudentId: string,
+  expectedHallId: string,
+  expectedMealDate: Date,
+  expectedSlot: MealSlot,
+): boolean => {
+  const parts = qrToken.split(".");
+  if (parts.length !== 3) return false;
+
+  const [orderCode, nonce, providedSignature] = parts;
+  const payload = `${orderCode}|${expectedStudentId}|${expectedHallId}|${expectedMealDate.toISOString()}|${expectedSlot}|${nonce}`;
+
+  const expectedSignature = crypto
+    .createHmac("sha256", getSigningSecret())
+    .update(payload)
+    .digest("hex")
+    .slice(0, 24);
+
+  const a = Buffer.from(providedSignature);
+  const b = Buffer.from(expectedSignature);
+  if (a.length !== b.length) return false;
+
+  return crypto.timingSafeEqual(a, b);
+};

@@ -21,6 +21,12 @@ model Hall {
   studentWarnings       StudentWarning[]
   incidentReports       IncidentReport[]
 
+  // Canteen Relations
+  canteenOwner     CanteenOwnerProfile?
+  masterPriceItems HallMasterPriceItem[]
+  canteenMenuItems CanteenMenuItem[]
+  foodOrders       FoodOrder[]
+
   @@index([genderType], name: "idx_hall_genderType")
   @@index([isActive], name: "idx_hall_isActive")
   @@map("halls")

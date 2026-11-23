@@ -1,5 +1,6 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import crypto from "crypto";
 import express, {
   NextFunction,
   type Application,
@@ -11,15 +12,14 @@ import config from "./app/config";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/modules/auth/auth.route";
-import z, { success } from "zod";
-import { redisClient } from "./app/lib/redis";
-import crypto from "crypto";
 import { UserRoutes } from "./app/modules/auth/user/user.route";
-import { HallRoutes } from "./app/modules/hall/hall.route";
-import { SeatRoutes } from "./app/modules/seat/seat.route";
+import { CanteenController } from "./app/modules/canteen/canteen.controller";
+import { CanteenRoutes } from "./app/modules/canteen/canteen.route";
 import { DisciplineRoutes } from "./app/modules/discipline/discipline.route";
-import { NoticeRoutes } from "./app/modules/notice/notice.route";
 import { GatePassRoutes } from "./app/modules/gatePass/gatePass.route";
+import { HallRoutes } from "./app/modules/hall/hall.route";
+import { NoticeRoutes } from "./app/modules/notice/notice.route";
+import { SeatRoutes } from "./app/modules/seat/seat.route";
 
 const app: Application = express();
 
@@ -30,8 +30,14 @@ app.use(
   }),
 );
 
-app.use(express.urlencoded({ extended: true }));
+// MUST come BEFORE express.json() so Stripe webhook gets the raw Buffer
+app.post(
+  "/api/v1/canteen/payments/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  CanteenController.stripeWebhook,
+);
 
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -42,6 +48,7 @@ app.use("/api/v1/seats", SeatRoutes);
 app.use("/api/v1/discipline", DisciplineRoutes);
 app.use("/api/v1/notices", NoticeRoutes);
 app.use("/api/v1/gate-passes", GatePassRoutes);
+app.use("/api/v1/canteen", CanteenRoutes);
 
 app.post("/demo", async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -49,7 +56,7 @@ app.post("/demo", async (req: Request, res: Response, next: NextFunction) => {
     res.status(httpStatus.OK).json({
       success: true,
       message: "Welcome to DIU SMART HALL API Server!",
-      data: null,
+      data: { otp },
     });
   } catch (error) {
     console.log(error);

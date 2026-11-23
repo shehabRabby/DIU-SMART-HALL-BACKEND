@@ -35,6 +35,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
+    "axios": "^1.21.1",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.7",
@@ -50,6 +51,7 @@
     "nodemailer": "^10.0.10",
     "pg": "^8.23.0",
     "redis": "^6.2.1",
+    "stripe": "^23.2.0",
     "zod": "^4.6.5"
   }
 }

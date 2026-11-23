@@ -27,6 +27,12 @@ model User {
   createdNotices       Notice[]   @relation("CreatedNotices")
   reviewedGatePasses   GatePass[] @relation("ReviewedGatePasses")
 
+  // Canteen Relations
+  canteenProfile         CanteenOwnerProfile?  @relation("CanteenOwnerUser")
+  createdMasterPrices    HallMasterPriceItem[] @relation("CreatedMasterPrices")
+  approvedMenuItems      CanteenMenuItem[]     @relation("ApprovedMenuItems")
+  reviewedFoodComplaints FoodComplaint[]       @relation("ReviewedFoodComplaints")
+
   @@unique([email])
   @@map("users")
 }

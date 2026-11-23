@@ -14,3 +14,6 @@ Database = prisma prisma studio | shehabrabby764@gmail.com
 OPT sent = shehabrabby764@gmail.com
 
 
+payment Stripe = shehabalrabby467@gmail.com
+bKash er credentials = Google search kore ana hoise
+

@@ -35,6 +35,13 @@ model Student {
   gatePasses         GatePass[]
   accusedIncidents   IncidentReport[]    @relation("AccusedInIncidents")
 
+  // Canteen Relations
+  canteenWallet       CanteenWallet?
+  foodOrders          FoodOrder[]
+  paymentTransactions PaymentTransaction[]
+  mealReviews         MealReview[]
+  foodComplaints      FoodComplaint[]
+
   @@index([email], name: "idx_student_email")
   @@index([isDeleted], name: "idx_student_isDeleted")
   @@index([hallId], name: "idx_student_hallId")

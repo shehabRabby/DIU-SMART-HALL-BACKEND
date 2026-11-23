@@ -115,3 +115,74 @@ enum GatePassStatus {
   EXPIRED
   CANCELLED
 }
+
+//canteen enums
+enum MealSlot {
+  BREAKFAST // Serving: 07:00 AM - 11:30 AM | Cut-off: 01:00 AM
+  LUNCH     // Serving: 12:00 PM - 05:00 PM | Cut-off: 06:00 AM
+  DINNER    // Serving: 07:00 PM - 11:00 PM | Cut-off: 01:00 PM
+}
+
+enum FoodCategory {
+  RICE
+  CHICKEN
+  BEEF_MUTTON
+  FISH
+  DAL_VEGETABLE
+  BHORTA
+  BREAD_EGG
+  BIRYANI_SPECIAL
+  COMBO_THALI
+  DRINKS_SNACKS
+}
+
+enum FoodPortion {
+  REGULAR
+  HALF
+  FULL
+}
+
+enum MenuApprovalStatus {
+  APPROVED
+  PENDING_PRICE_APPROVAL
+  REJECTED
+}
+
+enum FoodOrderStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  PREPARING
+  READY_FOR_PICKUP
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum FoodPaymentMethod {
+  BKASH
+  NAGAD
+  STRIPE
+  CANTEEN_WALLET
+  COUNTER_CASH
+}
+
+enum FoodPaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum TokenStatus {
+  ISSUED
+  CONSUMED
+  EXPIRED
+  CANCELLED
+}
+
+enum ComplaintStatus {
+  PENDING
+  WARNING_ISSUED
+  FINED
+  DISMISSED
+}

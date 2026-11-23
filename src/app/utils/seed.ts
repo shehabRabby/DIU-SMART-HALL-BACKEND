@@ -103,17 +103,6 @@ export const seedTesterAdmin = async () => {
 
 export const seedTesterCanteenOwner = async () => {
   try {
-    const isTesterCanteenOwnerExist = await prisma.user.findUnique({
-      where: {
-        email: config.tester_canteenOwner_email,
-      },
-    });
-
-    if (isTesterCanteenOwnerExist) {
-      console.log("Tester Canteen Owner Already Exists!");
-      return;
-    }
-
     const name = config.tester_canteenOwner_name;
     const email = config.tester_canteenOwner_email;
     const password = config.tester_canteenOwner_password;
@@ -124,30 +113,58 @@ export const seedTesterCanteenOwner = async () => {
       );
     }
 
-    const hashedPassword = await bcrypt.hash(
-      password,
-      Number(config.bcrypt_salt_rounds),
-    );
-
-    const testerCanteenOwner = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: Role.CANTEEN_OWNER,
-        needPasswordChange: false,
-        emailVerified: true,
-      },
+    let ownerUser = await prisma.user.findUnique({
+      where: { email },
+      include: { canteenProfile: true },
     });
 
-    console.log("Tester Canteen Owner Created Successfully: ", testerCanteenOwner);
+    if (!ownerUser) {
+      const hashedPassword = await bcrypt.hash(
+        password,
+        Number(config.bcrypt_salt_rounds),
+      );
+
+      ownerUser = await prisma.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          role: Role.CANTEEN_OWNER,
+          needPasswordChange: false,
+          emailVerified: true,
+        },
+        include: { canteenProfile: true },
+      });
+      console.log("Tester Canteen Owner User Created Successfully!");
+    }
+
+    // Ensure CanteenOwnerProfile is linked to an available Hall
+    if (!ownerUser.canteenProfile) {
+      const availableHall = await prisma.hall.findFirst({
+        where: { canteenOwner: null, isActive: true },
+      });
+
+      if (availableHall) {
+        await prisma.canteenOwnerProfile.create({
+          data: {
+            userId: ownerUser.id,
+            hallId: availableHall.id,
+            businessName: `${availableHall.shortName} Central Canteen`,
+            contactPhone: "01700000000",
+          },
+        });
+        console.log(
+          `Tester Canteen Owner linked to Hall: ${availableHall.shortName}`,
+        );
+      } else {
+        console.log(
+          "Tester Canteen Owner exists, but no unassigned Hall found yet. Assign via Admin API later.",
+        );
+      }
+    } else {
+      console.log("Tester Canteen Owner & Profile Already Exists!");
+    }
   } catch (error) {
     console.log("Error Seeding Tester Canteen Owner: ", error);
-
-    await prisma.user.delete({
-      where: {
-        email: config.tester_canteenOwner_email,
-      },
-    });
   }
 };
