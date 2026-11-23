@@ -1,0 +1,58 @@
+model Notice {
+  id          String         @id @default(uuid())
+  title       String
+  content     String
+  category    NoticeCategory @default(GENERAL)
+  priority    NoticePriority @default(NORMAL)
+  isPinned    Boolean        @default(false)
+  attachments Json           @default("[]")
+  expiresAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // Relations (hallId = null means Global Notice for all Boys & Girls halls)
+  hallId      String?
+  hall        Hall?   @relation(fields: [hallId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createdById String
+  createdBy   User    @relation("CreatedNotices", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([hallId, isPinned, expiresAt, createdAt], name: "idx_notice_feed_query")
+  @@index([category], name: "idx_notice_category")
+  @@map("notices")
+}
+
+model GatePass {
+  id               String         @id @default(uuid())
+  passCode         String?        @unique // e.g. DIU-GP-492810 (generated on approval)
+  qrToken          String?        @unique // Lightweight signed/random token for QR verification
+  passType         PassType
+  reason           String
+  destination      String
+  emergencyContact String
+  departureAt      DateTime
+  expectedReturnAt DateTime
+
+  // Gate & QR Verification Tracking
+  status         GatePassStatus @default(PENDING)
+  isQrUsed       Boolean        @default(false)
+  checkedOutAt   DateTime?
+  actualReturnAt DateTime?
+  adminNote      String?
+  reviewedAt     DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  studentId    String
+  student      Student @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  hallId       String
+  hall         Hall    @relation(fields: [hallId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reviewedById String?
+  reviewedBy   User?   @relation("ReviewedGatePasses", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([studentId, status], name: "idx_gatepass_student_status")
+  @@index([hallId, status], name: "idx_gatepass_hall_status")
+  @@index([expectedReturnAt], name: "idx_gatepass_expectedReturnAt")
+  @@map("gate_passes")
+}

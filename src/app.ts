@@ -18,6 +18,8 @@ import { UserRoutes } from "./app/modules/auth/user/user.route";
 import { HallRoutes } from "./app/modules/hall/hall.route";
 import { SeatRoutes } from "./app/modules/seat/seat.route";
 import { DisciplineRoutes } from "./app/modules/discipline/discipline.route";
+import { NoticeRoutes } from "./app/modules/notice/notice.route";
+import { GatePassRoutes } from "./app/modules/gatePass/gatePass.route";
 
 const app: Application = express();
 
@@ -38,6 +40,8 @@ app.use("/api/v1/user", UserRoutes);
 app.use("/api/v1/halls", HallRoutes);
 app.use("/api/v1/seats", SeatRoutes);
 app.use("/api/v1/discipline", DisciplineRoutes);
+app.use("/api/v1/notices", NoticeRoutes);
+app.use("/api/v1/gate-passes", GatePassRoutes);
 
 app.post("/demo", async (req: Request, res: Response, next: NextFunction) => {
   try {

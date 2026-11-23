@@ -14,6 +14,8 @@ model Hall {
   // Relations
   rooms                 Room[]
   students              Student[]
+  notices               Notice[]
+  gatePasses            GatePass[]
   allocatedApplications SeatApplication[]   @relation("AllocatedHall")
   requestedRoomChanges  RoomChangeRequest[] @relation("RequestedTargetHall")
   studentWarnings       StudentWarning[]

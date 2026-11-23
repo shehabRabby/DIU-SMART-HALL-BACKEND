@@ -24,6 +24,8 @@ model User {
   revokedWarnings      StudentWarning[]    @relation("RevokedStudentWarnings")
   reportedIncidents    IncidentReport[]    @relation("ReportedIncidents")
   resolvedIncidents    IncidentReport[]    @relation("ResolvedIncidents")
+  createdNotices       Notice[]   @relation("CreatedNotices")
+  reviewedGatePasses   GatePass[] @relation("ReviewedGatePasses")
 
   @@unique([email])
   @@map("users")
