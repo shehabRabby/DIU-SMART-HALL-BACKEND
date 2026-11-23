@@ -20,6 +20,21 @@ const createCanteenOwner = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateCanteenOwnerStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await CanteenService.updateCanteenOwnerStatus(
+      req.params.id as string,
+      req.body,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Canteen Owner status updated successfully.",
+      data: result,
+    });
+  },
+);
+
 const upsertMasterPriceItem = catchAsync(
   async (req: Request, res: Response) => {
     const result = await CanteenService.upsertMasterPriceItem(
@@ -131,6 +146,22 @@ const getKitchenPrepSummary = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "Kitchen preparation summary retrieved successfully.",
+      data: result,
+    });
+  },
+);
+
+const getVendorSalesAndDueLedger = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await CanteenService.getVendorSalesAndDueLedger(
+      req.user!.userId,
+      req.query.fromDate as string | undefined,
+      req.query.toDate as string | undefined,
+    );
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Canteen sales and due ledger retrieved successfully.",
       data: result,
     });
   },
@@ -311,6 +342,7 @@ const bkashCallback = catchAsync(async (req: Request, res: Response) => {
 
 export const CanteenController = {
   createCanteenOwner,
+  updateCanteenOwnerStatus,
   upsertMasterPriceItem,
   getHallMasterPrices,
   reviewMenuItemPrice,
@@ -319,6 +351,7 @@ export const CanteenController = {
   updateMenuItem,
   getCanteenOwnMenu,
   getKitchenPrepSummary,
+  getVendorSalesAndDueLedger,
   redeemFoodToken,
   updateOrderStatus,
   getStudentLiveMenu,

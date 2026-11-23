@@ -9,6 +9,7 @@ import {
   MenuApprovalStatus,
   Role,
   TokenStatus,
+  UserStatus,
 } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
@@ -21,6 +22,7 @@ import {
   IRedeemFoodTokenPayload,
   IResolveFoodComplaintPayload,
   IReviewMenuPricePayload,
+  IUpdateCanteenOwnerStatusPayload,
   IUpdateMenuItemPayload,
   IUpdateOrderStatusPayload,
   IUpsertMasterPricePayload,
@@ -41,14 +43,14 @@ const verifyResidentStudent = async (userId: string) => {
   const student = await prisma.student.findUnique({
     where: { userId },
     include: {
-      user: { select: { name: true, imageUrl: true, status: true } },
+      user: { select: { name: true, email: true, imageUrl: true, status: true } },
       hall: { select: { id: true, name: true, shortName: true } },
       room: { select: { id: true, roomNumber: true } },
       canteenWallet: true,
     },
   });
 
-  if (!student || student.isDeleted || student.user.status !== "ACTIVE") {
+  if (!student || student.isDeleted || student.user.status !== UserStatus.ACTIVE) {
     throw new Error("Active student profile not found.");
   }
   if (student.isExpelled) {
@@ -71,12 +73,13 @@ const verifyCanteenOwner = async (userId: string) => {
     where: { userId },
     include: {
       hall: { select: { id: true, name: true, shortName: true } },
+      user: { select: { status: true } },
     },
   });
 
-  if (!profile || !profile.isActive) {
+  if (!profile || !profile.isActive || profile.user.status !== UserStatus.ACTIVE) {
     throw new Error(
-      "Active Canteen Owner profile not found. Please contact Hall Admin to link your canteen to a Hall.",
+      "Active Canteen Owner profile not found or suspended. Please contact Hall Admin.",
     );
   }
 
@@ -84,7 +87,7 @@ const verifyCanteenOwner = async (userId: string) => {
 };
 
 // ============================================================================
-// 1. ADMIN GOVERNANCE (Canteen Owner Creation & Hall Master Price Control)
+// 1. ADMIN GOVERNANCE (Canteen Owner Creation, Suspension & Master Price Control)
 // ============================================================================
 
 const createCanteenOwner = async (payload: ICreateCanteenOwnerPayload) => {
@@ -118,7 +121,6 @@ const createCanteenOwner = async (payload: ICreateCanteenOwnerPayload) => {
       );
     }
 
-    // Link existing unassigned CANTEEN_OWNER user (e.g. seeded tester) to this Hall
     return prisma.canteenOwnerProfile.create({
       data: {
         userId: existingUser.id,
@@ -157,6 +159,83 @@ const createCanteenOwner = async (payload: ICreateCanteenOwnerPayload) => {
       include: {
         hall: { select: { id: true, name: true, shortName: true } },
         user: { select: { id: true, name: true, email: true, role: true } },
+      },
+    });
+  });
+};
+
+const updateCanteenOwnerStatus = async (
+  canteenOwnerId: string,
+  payload: IUpdateCanteenOwnerStatusPayload,
+) => {
+  const owner = await prisma.canteenOwnerProfile.findUnique({
+    where: { id: canteenOwnerId },
+    include: {
+      hall: { select: { id: true, name: true, shortName: true } },
+      user: { select: { id: true, name: true, email: true, status: true } },
+    },
+  });
+
+  if (!owner) {
+    throw new Error("Canteen Owner profile not found.");
+  }
+
+  // If removeAccount is requested, ensure no active/unconsumed future orders exist
+  if (payload.removeAccount) {
+    const activeOrdersCount = await prisma.foodOrder.count({
+      where: {
+        canteenId: owner.id,
+        orderStatus: {
+          in: [
+            FoodOrderStatus.CONFIRMED,
+            FoodOrderStatus.PREPARING,
+            FoodOrderStatus.READY_FOR_PICKUP,
+          ],
+        },
+      },
+    });
+
+    if (activeOrdersCount > 0) {
+      throw new Error(
+        `Cannot remove Canteen Owner while ${activeOrdersCount} active meal order(s) are pending fulfillment. Suspend the account first.`,
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.canteenOwnerProfile.delete({
+        where: { id: owner.id },
+      });
+      await tx.user.update({
+        where: { id: owner.userId },
+        data: { status: UserStatus.DELETED },
+      });
+    });
+
+    return {
+      removed: true,
+      canteenOwnerId: owner.id,
+      hall: owner.hall,
+      message: "Canteen Owner removed from hall and account deactivated.",
+    };
+  }
+
+  // Otherwise suspend or re-activate
+  return prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: owner.userId },
+      data: {
+        status: payload.isActive ? UserStatus.ACTIVE : UserStatus.BLOCKED,
+      },
+    });
+
+    return tx.canteenOwnerProfile.update({
+      where: { id: owner.id },
+      data: {
+        isActive: payload.isActive,
+      },
+      include: {
+        hall: { select: { id: true, name: true, shortName: true } },
+        user: { select: { id: true, name: true, email: true, status: true } },
       },
     });
   });
@@ -221,7 +300,7 @@ const reviewMenuItemPrice = async (
 };
 
 // ============================================================================
-// 2. CANTEEN OWNER: MENU MANAGEMENT & LIVE KITCHEN DASHBOARD
+// 2. CANTEEN OWNER: MENU MANAGEMENT, KITCHEN DASHBOARD & SALES/DUE LEDGER
 // ============================================================================
 
 const createMenuItem = async (
@@ -445,6 +524,123 @@ const getKitchenPrepSummary = async (
   };
 };
 
+// Direct Sales & Counter Due Ledger (SRS Section 1)
+const getVendorSalesAndDueLedger = async (
+  userId: string,
+  fromDateStr?: string,
+  toDateStr?: string,
+) => {
+  const canteen = await verifyCanteenOwner(userId);
+
+  const dateFilter: Prisma.DateTimeFilter = {};
+  if (fromDateStr) {
+    dateFilter.gte = normalizeMealDate(fromDateStr);
+  }
+  if (toDateStr) {
+    const end = normalizeMealDate(toDateStr);
+    end.setUTCHours(23, 59, 59, 999);
+    dateFilter.lte = end;
+  }
+
+  const orders = await prisma.foodOrder.findMany({
+    where: {
+      canteenId: canteen.id,
+      ...(fromDateStr || toDateStr ? { mealDate: dateFilter } : {}),
+      orderStatus: {
+        notIn: [FoodOrderStatus.CANCELLED, FoodOrderStatus.PENDING_PAYMENT],
+      },
+    },
+    include: {
+      student: {
+        select: {
+          name: true,
+          studentUniId: true,
+          room: { select: { roomNumber: true } },
+        },
+      },
+      transactions: {
+        where: { status: FoodPaymentStatus.PAID },
+        select: { tranId: true, gateway: true, gatewayRefId: true, verifiedAt: true },
+      },
+    },
+    orderBy: [{ mealDate: "desc" }, { createdAt: "desc" }],
+  });
+
+  const breakdownByMethod: Record<string, { count: number; totalTk: number }> = {};
+  let totalSettledSalesTk = 0;
+  let totalPendingCounterDueTk = 0;
+  let totalNoShowUnpaidTk = 0;
+
+  const unpaidDueList: Array<{
+    orderId: string;
+    orderCode: string;
+    mealDate: Date;
+    mealSlot: MealSlot;
+    orderStatus: FoodOrderStatus;
+    amountTk: number;
+    studentName: string;
+    studentUniId: string;
+    roomNumber: string;
+  }> = [];
+
+  for (const order of orders) {
+    if (!breakdownByMethod[order.paymentMethod]) {
+      breakdownByMethod[order.paymentMethod] = { count: 0, totalTk: 0 };
+    }
+    breakdownByMethod[order.paymentMethod].count += 1;
+    breakdownByMethod[order.paymentMethod].totalTk = Number(
+      (breakdownByMethod[order.paymentMethod].totalTk + order.totalAmount).toFixed(2),
+    );
+
+    if (order.paymentStatus === FoodPaymentStatus.PAID) {
+      totalSettledSalesTk = Number(
+        (totalSettledSalesTk + order.totalAmount).toFixed(2),
+      );
+    } else if (order.paymentStatus === FoodPaymentStatus.UNPAID) {
+      if (order.orderStatus === FoodOrderStatus.NO_SHOW) {
+        totalNoShowUnpaidTk = Number(
+          (totalNoShowUnpaidTk + order.totalAmount).toFixed(2),
+        );
+      } else {
+        totalPendingCounterDueTk = Number(
+          (totalPendingCounterDueTk + order.totalAmount).toFixed(2),
+        );
+      }
+
+      unpaidDueList.push({
+        orderId: order.id,
+        orderCode: order.orderCode,
+        mealDate: order.mealDate,
+        mealSlot: order.mealSlot,
+        orderStatus: order.orderStatus,
+        amountTk: order.totalAmount,
+        studentName: order.student.name,
+        studentUniId: order.student.studentUniId ?? "N/A",
+        roomNumber: order.student.room?.roomNumber ?? "N/A",
+      });
+    }
+  }
+
+  return {
+    canteen: {
+      id: canteen.id,
+      businessName: canteen.businessName,
+      hall: canteen.hall,
+      warningCount: canteen.warningCount,
+      totalFines: canteen.totalFines,
+    },
+    financialSummary: {
+      totalValidOrders: orders.length,
+      totalSettledSalesTk,
+      totalPendingCounterDueTk,
+      totalNoShowUnpaidTk,
+      breakdownByMethod,
+    },
+    unpaidDueList,
+    recentLedgerEntries: orders.slice(0, 50),
+  };
+};
+
 // ============================================================================
 // 3. STUDENT: MENU BROWSING, ZERO-TRUST ORDERING & CANCELLATION
 // ============================================================================
@@ -533,8 +729,21 @@ const createFoodOrder = async (
     }
   }
 
-  // 4. Zero-Trust Server-Side Price & Availability Resolution
-  const requestedIds = payload.items.map((i) => i.menuItemId);
+  // 4. Deduplicate repeated menuItemIds in payload so stock & max-10 guard cannot be bypassed
+  const mergedItemMap = new Map<string, number>();
+  for (const item of payload.items) {
+    const nextQty = (mergedItemMap.get(item.menuItemId) ?? 0) + item.quantity;
+    if (nextQty > 10) {
+      throw new Error("Maximum 10 portions per item allowed in a single order.");
+    }
+    mergedItemMap.set(item.menuItemId, nextQty);
+  }
+  const normalizedItems = Array.from(mergedItemMap.entries()).map(
+    ([menuItemId, quantity]) => ({ menuItemId, quantity }),
+  );
+
+  // 5. Zero-Trust Server-Side Price & Availability Resolution
+  const requestedIds = normalizedItems.map((i) => i.menuItemId);
   const dbMenuItems = await prisma.canteenMenuItem.findMany({
     where: {
       id: { in: requestedIds },
@@ -553,7 +762,7 @@ const createFoodOrder = async (
   const menuMap = new Map(dbMenuItems.map((m) => [m.id, m]));
   let totalAmount = 0;
 
-  const preparedOrderItems = payload.items.map((reqItem) => {
+  const preparedOrderItems = normalizedItems.map((reqItem) => {
     const menu = menuMap.get(reqItem.menuItemId)!;
 
     if (!menu.availableSlots.includes(payload.mealSlot)) {
@@ -593,7 +802,7 @@ const createFoodOrder = async (
     };
   });
 
-  // 5. Generate Tamper-Proof One-Time QR & 4-Digit PIN
+  // 6. Generate Tamper-Proof One-Time QR & 4-Digit PIN
   const security = generateOrderSecurityCredentials(
     student.id,
     student.hallId!,
@@ -601,7 +810,7 @@ const createFoodOrder = async (
     payload.mealSlot,
   );
 
-  // 6. Execute Atomic Transaction (Stock Lock + Wallet Deduction + Order Creation)
+  // 7. Execute Atomic Transaction (Stock Lock + 1Card Deduction + Order Creation)
   return prisma.$transaction(async (tx) => {
     for (const item of preparedOrderItems) {
       if (item.hasStockCap) {
@@ -630,12 +839,14 @@ const createFoodOrder = async (
     let orderStatus: FoodOrderStatus = FoodOrderStatus.PENDING_PAYMENT;
     let paidAt: Date | null = null;
 
-    if (payload.paymentMethod === FoodPaymentMethod.CANTEEN_WALLET) {
+    if (payload.paymentMethod === FoodPaymentMethod.ONECARD) {
       const wallet = await tx.canteenWallet.findUnique({
         where: { studentId: student.id },
       });
       if (!wallet || wallet.balance < totalAmount) {
-        throw new Error("Insufficient balance in your Canteen Credit Wallet.");
+        throw new Error(
+          "Insufficient balance in your DIU 1Card Canteen Account.",
+        );
       }
 
       await tx.canteenWallet.update({
@@ -719,14 +930,14 @@ const cancelFoodOrder = async (
       });
     }
 
-    let refundedToWallet = false;
+    let refundedTo1Card = false;
     if (order.paymentStatus === FoodPaymentStatus.PAID) {
       await tx.canteenWallet.upsert({
         where: { studentId: student.id },
         update: { balance: { increment: order.totalAmount } },
         create: { studentId: student.id, balance: order.totalAmount },
       });
-      refundedToWallet = true;
+      refundedTo1Card = true;
     }
 
     const updatedOrder = await tx.foodOrder.update({
@@ -734,7 +945,7 @@ const cancelFoodOrder = async (
       data: {
         orderStatus: FoodOrderStatus.CANCELLED,
         tokenStatus: TokenStatus.CANCELLED,
-        paymentStatus: refundedToWallet
+        paymentStatus: refundedTo1Card
           ? FoodPaymentStatus.REFUNDED
           : order.paymentStatus,
         cancelledAt: new Date(),
@@ -744,8 +955,8 @@ const cancelFoodOrder = async (
 
     return {
       order: updatedOrder,
-      refundedToWallet,
-      refundedAmount: refundedToWallet ? order.totalAmount : 0,
+      refundedTo1Card,
+      refundedAmount: refundedTo1Card ? order.totalAmount : 0,
     };
   });
 };
@@ -1017,7 +1228,7 @@ const createMealReview = async (
     );
   }
 
-  return prisma.mealReview.create({
+  const review = await prisma.mealReview.create({
     data: {
       orderId: payload.orderId,
       menuItemId: payload.menuItemId,
@@ -1026,6 +1237,29 @@ const createMealReview = async (
       comment: payload.comment,
     },
   });
+
+  // SRS Section 5: Check Weighted Verified Rating Threshold (< 2.8 across >= 10 reviews)
+  const aggregate = await prisma.mealReview.aggregate({
+    where: { menuItemId: payload.menuItemId },
+    _avg: { rating: true },
+    _count: { rating: true },
+  });
+
+  const totalReviews = aggregate._count.rating;
+  const avgRating = Number((aggregate._avg.rating ?? 0).toFixed(2));
+  const qualityAlertTriggered = totalReviews >= 10 && avgRating < 2.8;
+
+  return {
+    review,
+    itemQualityMetrics: {
+      totalVerifiedReviews: totalReviews,
+      averageRating: avgRating,
+      qualityAlertTriggered,
+      alertMessage: qualityAlertTriggered
+        ? "ADMIN QUALITY ALERT: Item average rating dropped below 2.8 across 10+ verified buyers."
+        : null,
+    },
+  };
 };
 
 const createFoodComplaint = async (
@@ -1102,6 +1336,7 @@ const resolveFoodComplaint = async (
 
 export const CanteenService = {
   createCanteenOwner,
+  updateCanteenOwnerStatus,
   upsertMasterPriceItem,
   getHallMasterPrices,
   reviewMenuItemPrice,
@@ -1109,6 +1344,7 @@ export const CanteenService = {
   updateMenuItem,
   getCanteenOwnMenu,
   getKitchenPrepSummary,
+  getVendorSalesAndDueLedger,
   getStudentLiveMenu,
   getStudentMyOrders,
   createFoodOrder,

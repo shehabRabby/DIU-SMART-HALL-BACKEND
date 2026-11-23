@@ -161,8 +161,9 @@ enum FoodOrderStatus {
 enum FoodPaymentMethod {
   BKASH
   NAGAD
+  ROCKET
   STRIPE
-  CANTEEN_WALLET
+  ONECARD
   COUNTER_CASH
 }
 

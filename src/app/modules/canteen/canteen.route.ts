@@ -17,6 +17,13 @@ router.post(
   CanteenController.createCanteenOwner,
 );
 
+router.patch(
+  "/owners/:id/status",
+  auth(Role.SUPER_ADMIN, Role.ADMIN),
+  validateRequest(CanteenValidation.updateCanteenOwnerStatusZodSchema),
+  CanteenController.updateCanteenOwnerStatus,
+);
+
 router.put(
   "/master-prices",
   auth(Role.SUPER_ADMIN, Role.ADMIN),
@@ -71,6 +78,12 @@ router.get(
   "/kitchen/prep-summary",
   auth(Role.CANTEEN_OWNER),
   CanteenController.getKitchenPrepSummary,
+);
+
+router.get(
+  "/ledger",
+  auth(Role.CANTEEN_OWNER),
+  CanteenController.getVendorSalesAndDueLedger,
 );
 
 router.post(

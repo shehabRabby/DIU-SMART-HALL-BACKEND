@@ -107,3 +107,9 @@ export interface IResolveFoodComplaintPayload {
   fineAmount?: number;
   adminNote: string;
 }
+
+export interface IUpdateCanteenOwnerStatusPayload {
+  isActive: boolean;
+  removeAccount?: boolean;
+  reason?: string;
+}

@@ -1,5 +1,6 @@
 import axios from "axios";
 import crypto from "crypto";
+import nodemailer from "nodemailer";
 import Stripe from "stripe";
 import { Prisma } from "../../../generated/prisma/client";
 import {
@@ -9,6 +10,10 @@ import {
 } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
+import {
+  assertBeforeCutoffDeadline,
+  getSlotScheduleWindows,
+} from "./canteen.utils";
 
 const getStripeSecretKey = () =>
   (config as unknown as { stripe?: { secret_key?: string } }).stripe
@@ -59,14 +64,97 @@ const stripeSecretKey = getStripeSecretKey();
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 /**
+ * Helper: Send Official Digital Meal Slip via Email (SRS Section 4: App + Email)
+ */
+const sendDigitalMealSlipEmail = async (orderId: string) => {
+  try {
+    const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER;
+    const smtpPass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+    if (!smtpUser || !smtpPass) return;
+
+    const order = await prisma.foodOrder.findUnique({
+      where: { id: orderId },
+      include: {
+        items: true,
+        hall: { select: { name: true, shortName: true } },
+        student: {
+          include: {
+            user: { select: { email: true } },
+            room: { select: { roomNumber: true } },
+          },
+        },
+      },
+    });
+
+    if (!order || !order.student.user.email) return;
+
+    const schedule = getSlotScheduleWindows(order.mealDate, order.mealSlot);
+    const mealDateFormatted = order.mealDate.toISOString().split("T")[0];
+
+    const itemsRows = order.items
+      .map(
+        (item) =>
+          `<tr>
+            <td style="padding:8px;border:1px solid #ddd;">${item.itemName} (${item.portion})</td>
+            <td style="padding:8px;border:1px solid #ddd;text-align:center;">${item.quantity}</td>
+            <td style="padding:8px;border:1px solid #ddd;text-align:right;">${item.subtotal.toFixed(2)} BDT</td>
+          </tr>`,
+      )
+      .join("");
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || "smtp.gmail.com",
+      port: Number(process.env.EMAIL_PORT) || 587,
+      secure: false,
+      auth: { user: smtpUser, pass: smtpPass },
+    });
+
+    await transporter.sendMail({
+      from: `"DIU SmartHall Canteen" <${smtpUser}>`,
+      to: order.student.user.email,
+      subject: `[Meal Slip] ${order.orderCode} - ${order.mealSlot} (${mealDateFormatted})`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #e2e8f0;border-radius:8px;padding:20px;">
+          <h2 style="color:#0f172a;margin-bottom:4px;">DIU SmartHall — Official Verified Meal Slip</h2>
+          <p style="color:#475569;margin-top:0;">Present this Order Code + 4-Digit PIN or QR Token at the canteen counter.</p>
+          <div style="background:#f8fafc;padding:12px;border-radius:6px;margin:16px 0;">
+            <p style="margin:4px 0;"><strong>Order Code:</strong> ${order.orderCode}</p>
+            <p style="margin:4px 0;"><strong>4-Digit Pickup PIN:</strong> <span style="font-size:18px;font-weight:bold;color:#16a34a;">${order.pickupPin}</span></p>
+            <p style="margin:4px 0;"><strong>Student:</strong> ${order.student.name} (${order.student.studentUniId}) — Room ${order.student.room?.roomNumber ?? "N/A"}</p>
+            <p style="margin:4px 0;"><strong>Hall & Slot:</strong> ${order.hall.name} | ${order.mealSlot} (${schedule.label})</p>
+            <p style="margin:4px 0;"><strong>Meal Date:</strong> ${mealDateFormatted}</p>
+            <p style="margin:4px 0;"><strong>Payment Verified At:</strong> ${order.paidAt?.toISOString() ?? new Date().toISOString()}</p>
+          </div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+            <thead>
+              <tr style="background:#f1f5f9;">
+                <th style="padding:8px;border:1px solid #ddd;text-align:left;">Item</th>
+                <th style="padding:8px;border:1px solid #ddd;text-align:center;">Qty</th>
+                <th style="padding:8px;border:1px solid #ddd;text-align:right;">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>${itemsRows}</tbody>
+          </table>
+          <p style="text-align:right;font-size:16px;"><strong>Total Paid: ${order.totalAmount.toFixed(2)} BDT (${order.paymentMethod})</strong></p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error("Failed to send Digital Meal Slip email:", err);
+  }
+};
+
+/**
  * Helper: Atomically mark PaymentTransaction & FoodOrder as PAID
+ * Enforces exact amount match (paidAmount === totalAmount) & idempotency
  */
 const confirmOrderPaymentSuccess = async (
   tranId: string,
   gatewayRefId: string,
+  verifiedPaidAmount: number,
   rawResponse: unknown,
 ) => {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const paymentTx = await tx.paymentTransaction.findUnique({
       where: { tranId },
       include: { order: true },
@@ -78,7 +166,14 @@ const confirmOrderPaymentSuccess = async (
 
     // Idempotency guard (if webhook & redirect callback fire together)
     if (paymentTx.status === FoodPaymentStatus.PAID) {
-      return paymentTx;
+      return { paymentTx, newlyConfirmed: false };
+    }
+
+    // Zero-Trust Amount Integrity Check (SRS Section 4)
+    if (Math.abs(verifiedPaidAmount - paymentTx.amount) > 0.01) {
+      throw new Error(
+        `PAYMENT AMOUNT MISMATCH: Expected ${paymentTx.amount} BDT, gateway confirmed ${verifiedPaidAmount} BDT.`,
+      );
     }
 
     const now = new Date();
@@ -102,8 +197,14 @@ const confirmOrderPaymentSuccess = async (
       },
     });
 
-    return updatedTx;
+    return { paymentTx: updatedTx, newlyConfirmed: true };
   });
+
+  if (result.newlyConfirmed) {
+    void sendDigitalMealSlipEmail(result.paymentTx.orderId);
+  }
+
+  return result.paymentTx;
 };
 
 // ============================================================================
@@ -127,6 +228,12 @@ const initiateStripePayment = async (userId: string, orderId: string) => {
   if (order.paymentStatus === FoodPaymentStatus.PAID) {
     throw new Error("This order is already paid.");
   }
+  if (order.orderStatus === FoodOrderStatus.CANCELLED) {
+    throw new Error("Cannot pay for a cancelled order.");
+  }
+
+  // Enforce 6-hour cut-off before initiating online payment
+  assertBeforeCutoffDeadline(order.mealDate, order.mealSlot);
 
   const tranId = `STR-${order.orderCode}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
@@ -160,7 +267,7 @@ const initiateStripePayment = async (userId: string, orderId: string) => {
           name: `${item.itemName} (${item.portion})`,
           description: `DIU SmartHall Canteen - ${order.hall.shortName} (${order.mealSlot})`,
         },
-        unit_amount: Math.round(item.unitPrice * 100), // Stripe expects paisa/cents
+        unit_amount: Math.round(item.unitPrice * 100), // Stripe expects paisa
       },
       quantity: item.quantity,
     })),
@@ -197,7 +304,13 @@ const handleStripeWebhook = async (rawBody: Buffer, signature: string) => {
         : session.id;
 
     if (tranId && session.payment_status === "paid") {
-      await confirmOrderPaymentSuccess(tranId, paymentIntentId, session);
+      const paidAmountBdt = (session.amount_total ?? 0) / 100;
+      await confirmOrderPaymentSuccess(
+        tranId,
+        paymentIntentId,
+        paidAmountBdt,
+        session,
+      );
     }
   }
 
@@ -224,7 +337,14 @@ const verifyStripeSession = async (sessionId: string) => {
       ? session.payment_intent
       : session.id;
 
-  return confirmOrderPaymentSuccess(tranId, paymentIntentId, session);
+  const paidAmountBdt = (session.amount_total ?? 0) / 100;
+
+  return confirmOrderPaymentSuccess(
+    tranId,
+    paymentIntentId,
+    paidAmountBdt,
+    session,
+  );
 };
 
 // ============================================================================
@@ -276,6 +396,12 @@ const initiateBkashPayment = async (userId: string, orderId: string) => {
   if (order.paymentStatus === FoodPaymentStatus.PAID) {
     throw new Error("This order is already paid.");
   }
+  if (order.orderStatus === FoodOrderStatus.CANCELLED) {
+    throw new Error("Cannot pay for a cancelled order.");
+  }
+
+  // Enforce 6-hour cut-off before initiating online payment
+  assertBeforeCutoffDeadline(order.mealDate, order.mealSlot);
 
   const bkashCfg = getBkashConfig();
   const idToken = await getBkashGrantToken();
@@ -372,9 +498,11 @@ const executeBkashCallback = async (
       execRes.data?.statusCode === "0000" &&
       execRes.data?.transactionStatus === "Completed"
     ) {
+      const verifiedAmount = Number(execRes.data.amount);
       await confirmOrderPaymentSuccess(
         tranId,
         execRes.data.trxID,
+        verifiedAmount,
         execRes.data,
       );
 
@@ -404,9 +532,11 @@ const executeBkashCallback = async (
     );
 
     if (queryRes.data?.transactionStatus === "Completed") {
+      const verifiedAmount = Number(queryRes.data.amount);
       await confirmOrderPaymentSuccess(
         tranId,
         queryRes.data.trxID,
+        verifiedAmount,
         queryRes.data,
       );
       return {
@@ -442,10 +572,18 @@ const initiateOrderPayment = async (userId: string, orderId: string) => {
     case FoodPaymentMethod.NAGAD:
       if (!process.env.NAGAD_MERCHANT_ID || !process.env.NAGAD_PRIVATE_KEY) {
         throw new Error(
-          "Nagad Sandbox credentials are currently pending. Please use bKash, Stripe, Canteen Wallet, or Counter Cash.",
+          "Nagad Sandbox credentials are currently pending. Please use bKash, Stripe, DIU 1Card, or Counter Cash.",
         );
       }
       throw new Error("Nagad gateway handler ready for merchant credentials.");
+
+    case FoodPaymentMethod.ROCKET:
+      if (!process.env.ROCKET_MERCHANT_ID || !process.env.ROCKET_SECRET_KEY) {
+        throw new Error(
+          "Rocket gateway credentials are currently pending. Please use bKash, Stripe, DIU 1Card, or Counter Cash.",
+        );
+      }
+      throw new Error("Rocket gateway handler ready for merchant credentials.");
 
     default:
       throw new Error(
