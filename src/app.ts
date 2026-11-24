@@ -9,6 +9,7 @@ import express, {
 } from "express";
 import httpStatus from "http-status";
 import config from "./app/config";
+import { connectRedis } from "./app/lib/redis";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/modules/auth/auth.route";
@@ -40,6 +41,16 @@ app.post(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Ensure Redis is connected on Serverless cold starts (Vercel)
+app.use(async (_req: Request, _res: Response, next: NextFunction) => {
+  try {
+    await connectRedis();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/user", UserRoutes);
