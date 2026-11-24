@@ -1,14 +1,20 @@
-import crypto from "crypto";
-import ejs from "ejs";
-import path from "path";
-import config from "../../config";
-import { prisma } from "../../lib/prisma";
-import { transporter } from "../../lib/nodemailer";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GatePassService = void 0;
+const crypto_1 = __importDefault(require("crypto"));
+const ejs_1 = __importDefault(require("ejs"));
+const path_1 = __importDefault(require("path"));
+const config_1 = __importDefault(require("../../config"));
+const prisma_1 = require("../../lib/prisma");
+const nodemailer_1 = require("../../lib/nodemailer");
 /**
  * Helper 1: Verify Student is an active, non-expelled hall resident
  */
 const verifyActiveResidentStudent = async (userId) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
         select: {
             id: true,
@@ -42,19 +48,19 @@ const verifyActiveResidentStudent = async (userId) => {
  * Helper 2: Generate Unique Pass Code & Tamper-Evident QR Token
  */
 const generatePassCredentials = () => {
-    const randomDigits = crypto.randomInt(100000, 999999);
+    const randomDigits = crypto_1.default.randomInt(100000, 999999);
     const passCode = `DIU-GP-${randomDigits}`;
-    const qrToken = crypto.randomBytes(24).toString("hex");
+    const qrToken = crypto_1.default.randomBytes(24).toString("hex");
     return { passCode, qrToken };
 };
 /**
  * Helper 3: Render EJS Template & Send Approved Gate Pass Email
  */
 const sendGatePassApprovedEmail = async (recipientEmail, templateData) => {
-    const templatePath = path.join(process.cwd(), "src", "app", "templates", "gate-pass-approved.ejs");
-    const html = await ejs.renderFile(templatePath, templateData);
-    await transporter.sendMail({
-        from: `"DIU SmartHall" <${config.smtp_user}>`,
+    const templatePath = path_1.default.join(process.cwd(), "src", "app", "templates", "gate-pass-approved.ejs");
+    const html = await ejs_1.default.renderFile(templatePath, templateData);
+    await nodemailer_1.transporter.sendMail({
+        from: `"DIU SmartHall" <${config_1.default.smtp_user}>`,
         to: recipientEmail,
         subject: templateData.subject,
         html,
@@ -71,7 +77,7 @@ const createGatePassRequest = async (userId, payload) => {
         throw new Error("Expected return time must be in the future.");
     }
     // Prevent duplicate active/pending requests
-    const existingOpenPass = await prisma.gatePass.findFirst({
+    const existingOpenPass = await prisma_1.prisma.gatePass.findFirst({
         where: {
             studentId: student.id,
             status: { in: ["PENDING", "APPROVED", "CHECKED_OUT"] },
@@ -81,7 +87,7 @@ const createGatePassRequest = async (userId, payload) => {
     if (existingOpenPass) {
         throw new Error(`You already have an active or pending ${existingOpenPass.passType} pass (${existingOpenPass.status}). Complete or cancel it first.`);
     }
-    return prisma.gatePass.create({
+    return prisma_1.prisma.gatePass.create({
         data: {
             studentId: student.id,
             hallId: student.hallId,
@@ -102,7 +108,7 @@ const createGatePassRequest = async (userId, payload) => {
  */
 const getMyGatePasses = async (userId) => {
     const student = await verifyActiveResidentStudent(userId);
-    return prisma.gatePass.findMany({
+    return prisma_1.prisma.gatePass.findMany({
         where: { studentId: student.id },
         orderBy: { createdAt: "desc" },
         include: {
@@ -115,14 +121,14 @@ const getMyGatePasses = async (userId) => {
  */
 const cancelMyGatePass = async (userId, passId) => {
     const student = await verifyActiveResidentStudent(userId);
-    const pass = await prisma.gatePass.findUnique({ where: { id: passId } });
+    const pass = await prisma_1.prisma.gatePass.findUnique({ where: { id: passId } });
     if (!pass || pass.studentId !== student.id) {
         throw new Error("Gate pass request not found.");
     }
     if (pass.status !== "PENDING") {
         throw new Error("Only PENDING gate pass requests can be cancelled.");
     }
-    return prisma.gatePass.update({
+    return prisma_1.prisma.gatePass.update({
         where: { id: passId },
         data: { status: "CANCELLED" },
     });
@@ -166,7 +172,7 @@ const getAllGatePassesForAdmin = async (filters) => {
             ],
         });
     }
-    const passes = await prisma.gatePass.findMany({
+    const passes = await prisma_1.prisma.gatePass.findMany({
         where: andConditions.length ? { AND: andConditions } : {},
         orderBy: { createdAt: "desc" },
         include: {
@@ -203,7 +209,7 @@ const getAllGatePassesForAdmin = async (filters) => {
  * 5. Approve or Reject Gate Pass + Generate Unique QR Credentials & Email Pass (Admin)
  */
 const reviewGatePass = async (adminUserId, passId, payload) => {
-    const pass = await prisma.gatePass.findUnique({
+    const pass = await prisma_1.prisma.gatePass.findUnique({
         where: { id: passId },
         include: {
             student: { select: { isResident: true, isExpelled: true } },
@@ -220,7 +226,7 @@ const reviewGatePass = async (adminUserId, passId, payload) => {
             throw new Error("Cannot approve: Student is no longer an active hall resident.");
         }
         const { passCode, qrToken } = generatePassCredentials();
-        const approvedPass = await prisma.gatePass.update({
+        const approvedPass = await prisma_1.prisma.gatePass.update({
             where: { id: passId },
             data: {
                 status: "APPROVED",
@@ -272,7 +278,7 @@ const reviewGatePass = async (adminUserId, passId, payload) => {
         });
         return approvedPass;
     }
-    return prisma.gatePass.update({
+    return prisma_1.prisma.gatePass.update({
         where: { id: passId },
         data: {
             status: "REJECTED",
@@ -286,7 +292,7 @@ const reviewGatePass = async (adminUserId, passId, payload) => {
  * 6. Verify QR Code / Pass Code at Main Gate (Admin / Gate Security)
  */
 const verifyGatePassQr = async (identifier) => {
-    const pass = await prisma.gatePass.findFirst({
+    const pass = await prisma_1.prisma.gatePass.findFirst({
         where: {
             OR: [{ passCode: identifier }, { qrToken: identifier }],
         },
@@ -350,7 +356,7 @@ const verifyGatePassQr = async (identifier) => {
  * 7. Update Gate Log: CHECKED_OUT or RETURNED (Invalidates QR on Return/Entry)
  */
 const updateGateLog = async (passId, payload) => {
-    const pass = await prisma.gatePass.findUnique({ where: { id: passId } });
+    const pass = await prisma_1.prisma.gatePass.findUnique({ where: { id: passId } });
     if (!pass) {
         throw new Error("Gate pass not found.");
     }
@@ -362,7 +368,7 @@ const updateGateLog = async (passId, payload) => {
         if (pass.passType === "LATE_ENTRY") {
             throw new Error("LATE_ENTRY passes are for hall entry only—mark directly as RETURNED upon arrival.");
         }
-        return prisma.gatePass.update({
+        return prisma_1.prisma.gatePass.update({
             where: { id: passId },
             data: {
                 status: "CHECKED_OUT",
@@ -374,7 +380,7 @@ const updateGateLog = async (passId, payload) => {
     if (pass.status !== "APPROVED" && pass.status !== "CHECKED_OUT") {
         throw new Error("Only APPROVED or CHECKED_OUT passes can be marked as RETURNED.");
     }
-    return prisma.gatePass.update({
+    return prisma_1.prisma.gatePass.update({
         where: { id: passId },
         data: {
             status: "RETURNED",
@@ -383,7 +389,7 @@ const updateGateLog = async (passId, payload) => {
         },
     });
 };
-export const GatePassService = {
+exports.GatePassService = {
     createGatePassRequest,
     getMyGatePasses,
     cancelMyGatePass,

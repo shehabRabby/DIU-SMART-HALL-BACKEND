@@ -1,11 +1,17 @@
-import { v2 as cloudinary } from "cloudinary";
-import multer from "multer";
-import config from "../config";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.uploadBufferToCloudinary = exports.upload = void 0;
+const cloudinary_1 = require("cloudinary");
+const multer_1 = __importDefault(require("multer"));
+const config_1 = __importDefault(require("../config"));
 // Configure Cloudinary using my existing flat config keys
-cloudinary.config({
-    cloud_name: config.cloudinary_cloude_name,
-    api_key: config.cloudinary_api_key,
-    api_secret: config.cloudinary_api_secret,
+cloudinary_1.v2.config({
+    cloud_name: config_1.default.cloudinary_cloude_name,
+    api_key: config_1.default.cloudinary_api_key,
+    api_secret: config_1.default.cloudinary_api_secret,
 });
 const ALLOWED_MIME_TYPES = {
     "image/jpeg": "IMAGE",
@@ -23,13 +29,13 @@ const fileFilter = (_req, file, cb) => {
     }
 };
 // Memory storage prevents local disk bloat
-export const upload = multer({
-    storage: multer.memoryStorage(),
+exports.upload = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max limit
     fileFilter,
 });
 // Upload buffer directly to Cloudinary & detect AttachmentType
-export const uploadBufferToCloudinary = async (file, folder = "diu-smarthall/notices") => {
+const uploadBufferToCloudinary = async (file, folder = "diu-smarthall/notices") => {
     const attachmentType = ALLOWED_MIME_TYPES[file.mimetype];
     const isImage = attachmentType === "IMAGE";
     const isPdf = attachmentType === "PDF";
@@ -44,7 +50,7 @@ export const uploadBufferToCloudinary = async (file, folder = "diu-smarthall/not
         ? `${baseName || "img"}_${uniqueSuffix}`
         : `${baseName || "doc"}_${uniqueSuffix}.${ext}`;
     return new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream({
+        const uploadStream = cloudinary_1.v2.uploader.upload_stream({
             folder,
             public_id: publicId,
             // "auto" allows PDFs to open inline in Chrome; "raw" is required for DOCX
@@ -62,3 +68,4 @@ export const uploadBufferToCloudinary = async (file, folder = "diu-smarthall/not
         uploadStream.end(file.buffer);
     });
 };
+exports.uploadBufferToCloudinary = uploadBufferToCloudinary;

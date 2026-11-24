@@ -1,24 +1,27 @@
-import { Router } from "express";
-import { Role } from "../../../generated/prisma/enums";
-import { auth } from "../../middleware/checkAuth";
-import { validateRequest } from "../../middleware/validateRequest";
-import { DisciplineController } from "./discipline.controller";
-import { DisciplineValidation } from "./discipline.validation";
-const router = Router();
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DisciplineRoutes = void 0;
+const express_1 = require("express");
+const enums_1 = require("../../../generated/prisma/enums");
+const checkAuth_1 = require("../../middleware/checkAuth");
+const validateRequest_1 = require("../../middleware/validateRequest");
+const discipline_controller_1 = require("./discipline.controller");
+const discipline_validation_1 = require("./discipline.validation");
+const router = (0, express_1.Router)();
 // 1. ANALYTICS & DIGITAL CLEARANCE
-router.get("/analytics", auth(Role.SUPER_ADMIN, Role.ADMIN), DisciplineController.getDisciplineAnalytics);
-router.get("/my-clearance", auth(Role.STUDENT), DisciplineController.getMyConductClearance);
+router.get("/analytics", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), discipline_controller_1.DisciplineController.getDisciplineAnalytics);
+router.get("/my-clearance", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), discipline_controller_1.DisciplineController.getMyConductClearance);
 // 2. INCIDENT & PEER MEDIATION
-router.post("/incidents", auth(Role.SUPER_ADMIN, Role.ADMIN, Role.STUDENT), validateRequest(DisciplineValidation.createIncidentZodSchema), DisciplineController.createIncidentReport);
-router.get("/incidents", auth(Role.SUPER_ADMIN, Role.ADMIN), DisciplineController.getAllIncidents);
-router.patch("/incidents/:incidentId/resolve", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(DisciplineValidation.resolveIncidentZodSchema), DisciplineController.resolveOrEscalateIncident);
+router.post("/incidents", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN, enums_1.Role.STUDENT), (0, validateRequest_1.validateRequest)(discipline_validation_1.DisciplineValidation.createIncidentZodSchema), discipline_controller_1.DisciplineController.createIncidentReport);
+router.get("/incidents", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), discipline_controller_1.DisciplineController.getAllIncidents);
+router.patch("/incidents/:incidentId/resolve", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(discipline_validation_1.DisciplineValidation.resolveIncidentZodSchema), discipline_controller_1.DisciplineController.resolveOrEscalateIncident);
 // 3. WARNINGS, SHOW-CAUSE & DUE PROCESS APPEALS
-router.post("/warnings", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(DisciplineValidation.issueWarningZodSchema), DisciplineController.issueWarning);
-router.get("/warnings", auth(Role.SUPER_ADMIN, Role.ADMIN), DisciplineController.getAllWarnings);
-router.get("/my-warnings", auth(Role.STUDENT), DisciplineController.getMyWarnings);
-router.post("/warnings/:warningId/appeal", auth(Role.STUDENT), validateRequest(DisciplineValidation.submitAppealZodSchema), DisciplineController.submitAppeal);
-router.patch("/warnings/:warningId/review-appeal", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(DisciplineValidation.reviewAppealZodSchema), DisciplineController.reviewAppeal);
+router.post("/warnings", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(discipline_validation_1.DisciplineValidation.issueWarningZodSchema), discipline_controller_1.DisciplineController.issueWarning);
+router.get("/warnings", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), discipline_controller_1.DisciplineController.getAllWarnings);
+router.get("/my-warnings", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), discipline_controller_1.DisciplineController.getMyWarnings);
+router.post("/warnings/:warningId/appeal", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), (0, validateRequest_1.validateRequest)(discipline_validation_1.DisciplineValidation.submitAppealZodSchema), discipline_controller_1.DisciplineController.submitAppeal);
+router.patch("/warnings/:warningId/review-appeal", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(discipline_validation_1.DisciplineValidation.reviewAppealZodSchema), discipline_controller_1.DisciplineController.reviewAppeal);
 // 4. FINE CLEARANCE & CLEMENCY (EXPULSION REVOCATION)
-router.patch("/warnings/:warningId/pay-fine", auth(Role.SUPER_ADMIN, Role.ADMIN), DisciplineController.markFinePaid);
-router.patch("/students/:studentId/revoke-expulsion", auth(Role.SUPER_ADMIN), validateRequest(DisciplineValidation.revokeExpulsionZodSchema), DisciplineController.revokeExpulsion);
-export const DisciplineRoutes = router;
+router.patch("/warnings/:warningId/pay-fine", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), discipline_controller_1.DisciplineController.markFinePaid);
+router.patch("/students/:studentId/revoke-expulsion", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN), (0, validateRequest_1.validateRequest)(discipline_validation_1.DisciplineValidation.revokeExpulsionZodSchema), discipline_controller_1.DisciplineController.revokeExpulsion);
+exports.DisciplineRoutes = router;

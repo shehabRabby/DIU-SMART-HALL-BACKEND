@@ -1,11 +1,14 @@
-import { Router } from "express";
-import { Role } from "../../../generated/prisma/enums";
-import { auth } from "../../middleware/checkAuth";
-import { upload } from "../../middleware/upload";
-import { validateRequest } from "../../middleware/validateRequest";
-import { NoticeController } from "./notice.controller";
-import { NoticeValidation } from "./notice.validation";
-const router = Router();
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NoticeRoutes = void 0;
+const express_1 = require("express");
+const enums_1 = require("../../../generated/prisma/enums");
+const checkAuth_1 = require("../../middleware/checkAuth");
+const upload_1 = require("../../middleware/upload");
+const validateRequest_1 = require("../../middleware/validateRequest");
+const notice_controller_1 = require("./notice.controller");
+const notice_validation_1 = require("./notice.validation");
+const router = (0, express_1.Router)();
 /**
  * Helper Middleware: Normalize multipart/form-data fields before Zod validation
  * Supports either `data` JSON string field OR individual form-data fields (e.g., isPinned: "true")
@@ -31,12 +34,12 @@ const parseNoticeFormData = (req, _res, next) => {
     }
     next();
 };
-router.post("/", auth(Role.SUPER_ADMIN, Role.ADMIN), upload.array("files", 5), // Minimum 0, Maximum 5 files
-parseNoticeFormData, validateRequest(NoticeValidation.createNoticeZodSchema), NoticeController.createNotice);
-router.get("/", NoticeController.getStudentNotices);
-router.get("/admin/all", auth(Role.SUPER_ADMIN, Role.ADMIN), NoticeController.getAllNoticesForAdmin);
-router.delete("/admin/purge-expired", auth(Role.SUPER_ADMIN, Role.ADMIN), NoticeController.purgeExpiredNotices);
-router.patch("/:noticeId", auth(Role.SUPER_ADMIN, Role.ADMIN), upload.array("files", 5), // Minimum 0, Maximum 5 files
-parseNoticeFormData, validateRequest(NoticeValidation.updateNoticeZodSchema), NoticeController.updateNotice);
-router.delete("/:noticeId", auth(Role.SUPER_ADMIN, Role.ADMIN), NoticeController.deleteNotice);
-export const NoticeRoutes = router;
+router.post("/", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), upload_1.upload.array("files", 5), // Minimum 0, Maximum 5 files
+parseNoticeFormData, (0, validateRequest_1.validateRequest)(notice_validation_1.NoticeValidation.createNoticeZodSchema), notice_controller_1.NoticeController.createNotice);
+router.get("/", notice_controller_1.NoticeController.getStudentNotices);
+router.get("/admin/all", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), notice_controller_1.NoticeController.getAllNoticesForAdmin);
+router.delete("/admin/purge-expired", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), notice_controller_1.NoticeController.purgeExpiredNotices);
+router.patch("/:noticeId", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), upload_1.upload.array("files", 5), // Minimum 0, Maximum 5 files
+parseNoticeFormData, (0, validateRequest_1.validateRequest)(notice_validation_1.NoticeValidation.updateNoticeZodSchema), notice_controller_1.NoticeController.updateNotice);
+router.delete("/:noticeId", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), notice_controller_1.NoticeController.deleteNotice);
+exports.NoticeRoutes = router;

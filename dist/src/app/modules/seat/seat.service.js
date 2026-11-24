@@ -1,14 +1,20 @@
-import ejs from "ejs";
-import path from "path";
-import { ApplicationStatus, RoomStatus } from "../../../generated/prisma/enums";
-import config from "../../config";
-import { prisma } from "../../lib/prisma";
-import { transporter } from "../../lib/nodemailer";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SeatService = void 0;
+const ejs_1 = __importDefault(require("ejs"));
+const path_1 = __importDefault(require("path"));
+const enums_1 = require("../../../generated/prisma/enums");
+const config_1 = __importDefault(require("../../config"));
+const prisma_1 = require("../../lib/prisma");
+const nodemailer_1 = require("../../lib/nodemailer");
 // INTERNAL EMAIL HELPERS (Non-Blocking Safe)
 const sendSeatAllocationEmail = async (params) => {
     try {
-        const templatePath = path.join(process.cwd(), "src", "app", "templates", "seat-allocation-approved.ejs");
-        const html = await ejs.renderFile(templatePath, {
+        const templatePath = path_1.default.join(process.cwd(), "src", "app", "templates", "seat-allocation-approved.ejs");
+        const html = await ejs_1.default.renderFile(templatePath, {
             name: params.name,
             hallName: params.hallName,
             hallShortName: params.hallShortName,
@@ -17,8 +23,8 @@ const sendSeatAllocationEmail = async (params) => {
             monthlyFee: params.monthlyFee,
             adminNote: params.adminNote ?? null,
         });
-        await transporter.sendMail({
-            from: `"DIU Smart Hall" <${config.smtp_user}>`,
+        await nodemailer_1.transporter.sendMail({
+            from: `"DIU Smart Hall" <${config_1.default.smtp_user}>`,
             to: params.to,
             subject: `Seat Allocated: ${params.hallShortName} - Room ${params.roomNumber}`,
             html,
@@ -30,8 +36,8 @@ const sendSeatAllocationEmail = async (params) => {
 };
 const sendSeatStatusEmail = async (params) => {
     try {
-        const templatePath = path.join(process.cwd(), "src", "app", "templates", "seat-status-notification.ejs");
-        const html = await ejs.renderFile(templatePath, {
+        const templatePath = path_1.default.join(process.cwd(), "src", "app", "templates", "seat-status-notification.ejs");
+        const html = await ejs_1.default.renderFile(templatePath, {
             subject: params.subject,
             heading: params.heading,
             statusType: params.statusType,
@@ -39,8 +45,8 @@ const sendSeatStatusEmail = async (params) => {
             message: params.message,
             details: params.details ?? [],
         });
-        await transporter.sendMail({
-            from: `"DIU Smart Hall" <${config.smtp_user}>`,
+        await nodemailer_1.transporter.sendMail({
+            from: `"DIU Smart Hall" <${config_1.default.smtp_user}>`,
             to: params.to,
             subject: params.subject,
             html,
@@ -52,7 +58,7 @@ const sendSeatStatusEmail = async (params) => {
 };
 // 1. SEAT APPLICATION SERVICES
 const applyForSeat = async (userId, payload) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
     });
     if (!student || student.isDeleted) {
@@ -64,10 +70,10 @@ const applyForSeat = async (userId, payload) => {
     if (student.isResident && student.roomId) {
         throw new Error("You already have an allocated hall seat. Use the room change request feature if you want to switch rooms.");
     }
-    const existingPendingApp = await prisma.seatApplication.findFirst({
+    const existingPendingApp = await prisma_1.prisma.seatApplication.findFirst({
         where: {
             studentId: student.id,
-            status: ApplicationStatus.PENDING,
+            status: enums_1.ApplicationStatus.PENDING,
         },
     });
     if (existingPendingApp) {
@@ -80,7 +86,7 @@ const applyForSeat = async (userId, payload) => {
         throw new Error("Invalid University ID! Provided ID does not match your registered profile.");
     }
     // Ensure studentUniId is not already claimed by another student
-    const duplicateUniId = await prisma.student.findFirst({
+    const duplicateUniId = await prisma_1.prisma.student.findFirst({
         where: {
             studentUniId: payload.studentUniId.trim(),
             id: { not: student.id },
@@ -100,7 +106,7 @@ const applyForSeat = async (userId, payload) => {
             payload.department.trim().toUpperCase()) {
         throw new Error("Invalid Department! Provided department does not match your registered profile.");
     }
-    const application = await prisma.seatApplication.create({
+    const application = await prisma_1.prisma.seatApplication.create({
         data: {
             studentId: student.id,
             studentUniId: payload.studentUniId.trim(),
@@ -125,13 +131,13 @@ const applyForSeat = async (userId, payload) => {
     return application;
 };
 const getMySeatApplications = async (userId) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
     });
     if (!student || student.isDeleted) {
         throw new Error("Student profile not found.");
     }
-    const applications = await prisma.seatApplication.findMany({
+    const applications = await prisma_1.prisma.seatApplication.findMany({
         where: { studentId: student.id },
         orderBy: { createdAt: "desc" },
         include: {
@@ -155,25 +161,25 @@ const getMySeatApplications = async (userId) => {
     return applications;
 };
 const cancelMySeatApplication = async (userId, applicationId) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
     });
     if (!student || student.isDeleted) {
         throw new Error("Student profile not found.");
     }
-    const application = await prisma.seatApplication.findUnique({
+    const application = await prisma_1.prisma.seatApplication.findUnique({
         where: { id: applicationId },
     });
     if (!application || application.studentId !== student.id) {
         throw new Error("Seat application not found.");
     }
-    if (application.status !== ApplicationStatus.PENDING) {
+    if (application.status !== enums_1.ApplicationStatus.PENDING) {
         throw new Error(`Cannot withdraw an application that is already ${application.status}.`);
     }
-    const updated = await prisma.seatApplication.update({
+    const updated = await prisma_1.prisma.seatApplication.update({
         where: { id: applicationId },
         data: {
-            status: ApplicationStatus.REJECTED,
+            status: enums_1.ApplicationStatus.REJECTED,
             adminNote: "Withdrawn by applicant before admin review.",
             reviewedAt: new Date(),
         },
@@ -181,7 +187,7 @@ const cancelMySeatApplication = async (userId, applicationId) => {
     return updated;
 };
 const getMyCurrentSeat = async (userId) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
         include: {
             hall: {
@@ -258,7 +264,7 @@ const getAllSeatApplications = async (query) => {
             mode: "insensitive",
         };
     }
-    const applications = await prisma.seatApplication.findMany({
+    const applications = await prisma_1.prisma.seatApplication.findMany({
         where: whereClause,
         orderBy: { createdAt: "asc" }, // First-come-first-served queue order
         include: {
@@ -303,15 +309,15 @@ const getAllSeatApplications = async (query) => {
 };
 // 2. SMART ROOM RECOMMENDATION ENGINE
 const getRecommendedRoomsForApplication = async (applicationId) => {
-    const application = await prisma.seatApplication.findUnique({
+    const application = await prisma_1.prisma.seatApplication.findUnique({
         where: { id: applicationId },
     });
     if (!application) {
         throw new Error("Seat application not found.");
     }
-    const candidateRooms = await prisma.room.findMany({
+    const candidateRooms = await prisma_1.prisma.room.findMany({
         where: {
-            status: RoomStatus.AVAILABLE,
+            status: enums_1.RoomStatus.AVAILABLE,
             hall: {
                 isActive: true,
                 genderType: application.gender,
@@ -398,7 +404,7 @@ const getRecommendedRoomsForApplication = async (applicationId) => {
 };
 // 3. APPROVE / REJECT / DIRECT ALLOCATION
 const approveSeatApplication = async (reviewerUserId, applicationId, payload) => {
-    const application = await prisma.seatApplication.findUnique({
+    const application = await prisma_1.prisma.seatApplication.findUnique({
         where: { id: applicationId },
         include: {
             student: true,
@@ -407,7 +413,7 @@ const approveSeatApplication = async (reviewerUserId, applicationId, payload) =>
     if (!application) {
         throw new Error("Seat application not found.");
     }
-    if (application.status !== ApplicationStatus.PENDING) {
+    if (application.status !== enums_1.ApplicationStatus.PENDING) {
         throw new Error(`This application has already been ${application.status.toLowerCase()}.`);
     }
     if (application.student.isDeleted || application.student.isExpelled) {
@@ -416,7 +422,7 @@ const approveSeatApplication = async (reviewerUserId, applicationId, payload) =>
     if (application.student.isResident && application.student.roomId) {
         throw new Error("Student already occupies a hall seat.");
     }
-    const hall = await prisma.hall.findUnique({
+    const hall = await prisma_1.prisma.hall.findUnique({
         where: { id: payload.hallId },
     });
     if (!hall || !hall.isActive) {
@@ -425,21 +431,21 @@ const approveSeatApplication = async (reviewerUserId, applicationId, payload) =>
     if (hall.genderType !== application.gender) {
         throw new Error(`Gender mismatch! Cannot allocate a ${application.gender} student to ${hall.shortName} (${hall.genderType} hall).`);
     }
-    const room = await prisma.room.findUnique({
+    const room = await prisma_1.prisma.room.findUnique({
         where: { id: payload.roomId },
     });
     if (!room || room.hallId !== hall.id) {
         throw new Error("Selected room does not belong to the specified hall.");
     }
-    if (room.status !== RoomStatus.AVAILABLE ||
+    if (room.status !== enums_1.RoomStatus.AVAILABLE ||
         room.occupiedCount >= room.capacity) {
         throw new Error(`Room ${room.roomNumber} is not available (Current status: ${room.status}, Occupied: ${room.occupiedCount}/${room.capacity}).`);
     }
-    const updatedApplication = await prisma.$transaction(async (tx) => {
+    const updatedApplication = await prisma_1.prisma.$transaction(async (tx) => {
         const appRecord = await tx.seatApplication.update({
             where: { id: application.id },
             data: {
-                status: ApplicationStatus.APPROVED,
+                status: enums_1.ApplicationStatus.APPROVED,
                 allocatedHallId: hall.id,
                 allocatedRoomId: room.id,
                 adminNote: payload.adminNote?.trim() ?? null,
@@ -493,8 +499,8 @@ const approveSeatApplication = async (reviewerUserId, applicationId, payload) =>
             data: {
                 occupiedCount: newOccupiedCount,
                 status: newOccupiedCount >= room.capacity
-                    ? RoomStatus.FULL
-                    : RoomStatus.AVAILABLE,
+                    ? enums_1.RoomStatus.FULL
+                    : enums_1.RoomStatus.AVAILABLE,
             },
         });
         return appRecord;
@@ -512,7 +518,7 @@ const approveSeatApplication = async (reviewerUserId, applicationId, payload) =>
     return updatedApplication;
 };
 const rejectSeatApplication = async (reviewerUserId, applicationId, payload) => {
-    const application = await prisma.seatApplication.findUnique({
+    const application = await prisma_1.prisma.seatApplication.findUnique({
         where: { id: applicationId },
         include: {
             student: true,
@@ -521,13 +527,13 @@ const rejectSeatApplication = async (reviewerUserId, applicationId, payload) => 
     if (!application) {
         throw new Error("Seat application not found.");
     }
-    if (application.status !== ApplicationStatus.PENDING) {
+    if (application.status !== enums_1.ApplicationStatus.PENDING) {
         throw new Error(`This application has already been ${application.status.toLowerCase()}.`);
     }
-    const updated = await prisma.seatApplication.update({
+    const updated = await prisma_1.prisma.seatApplication.update({
         where: { id: application.id },
         data: {
-            status: ApplicationStatus.REJECTED,
+            status: enums_1.ApplicationStatus.REJECTED,
             adminNote: payload.adminNote.trim(),
             reviewedById: reviewerUserId,
             reviewedAt: new Date(),
@@ -549,7 +555,7 @@ const rejectSeatApplication = async (reviewerUserId, applicationId, payload) => 
     return updated;
 };
 const directAllocateSeat = async (reviewerUserId, payload) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { id: payload.studentId },
     });
     if (!student || student.isDeleted) {
@@ -561,7 +567,7 @@ const directAllocateSeat = async (reviewerUserId, payload) => {
     if (student.isResident && student.roomId) {
         throw new Error("Student already occupies a hall seat.");
     }
-    const hall = await prisma.hall.findUnique({
+    const hall = await prisma_1.prisma.hall.findUnique({
         where: { id: payload.hallId },
     });
     if (!hall || !hall.isActive) {
@@ -571,25 +577,25 @@ const directAllocateSeat = async (reviewerUserId, payload) => {
     if (resolvedGender && hall.genderType !== resolvedGender) {
         throw new Error(`Gender mismatch! Student gender (${resolvedGender}) does not match ${hall.shortName} (${hall.genderType}).`);
     }
-    const room = await prisma.room.findUnique({
+    const room = await prisma_1.prisma.room.findUnique({
         where: { id: payload.roomId },
     });
     if (!room || room.hallId !== hall.id) {
         throw new Error("Selected room does not belong to the specified hall.");
     }
-    if (room.status !== RoomStatus.AVAILABLE ||
+    if (room.status !== enums_1.RoomStatus.AVAILABLE ||
         room.occupiedCount >= room.capacity) {
         throw new Error(`Room ${room.roomNumber} is not available for allocation.`);
     }
-    const updatedStudent = await prisma.$transaction(async (tx) => {
+    const updatedStudent = await prisma_1.prisma.$transaction(async (tx) => {
         // Close any pending application if one existed
         await tx.seatApplication.updateMany({
             where: {
                 studentId: student.id,
-                status: ApplicationStatus.PENDING,
+                status: enums_1.ApplicationStatus.PENDING,
             },
             data: {
-                status: ApplicationStatus.APPROVED,
+                status: enums_1.ApplicationStatus.APPROVED,
                 allocatedHallId: hall.id,
                 allocatedRoomId: room.id,
                 adminNote: payload.adminNote?.trim() ??
@@ -635,8 +641,8 @@ const directAllocateSeat = async (reviewerUserId, payload) => {
             data: {
                 occupiedCount: newOccupiedCount,
                 status: newOccupiedCount >= room.capacity
-                    ? RoomStatus.FULL
-                    : RoomStatus.AVAILABLE,
+                    ? enums_1.RoomStatus.FULL
+                    : enums_1.RoomStatus.AVAILABLE,
             },
         });
         return resStudent;
@@ -655,7 +661,7 @@ const directAllocateSeat = async (reviewerUserId, payload) => {
 };
 // 4. ROOM CHANGE REQUEST SERVICES
 const requestRoomChange = async (userId, payload) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
     });
     if (!student || student.isDeleted) {
@@ -664,10 +670,10 @@ const requestRoomChange = async (userId, payload) => {
     if (!student.isResident || !student.roomId || !student.hallId) {
         throw new Error("Only current residential students can submit a room change request.");
     }
-    const existingPendingRequest = await prisma.roomChangeRequest.findFirst({
+    const existingPendingRequest = await prisma_1.prisma.roomChangeRequest.findFirst({
         where: {
             studentId: student.id,
-            status: ApplicationStatus.PENDING,
+            status: enums_1.ApplicationStatus.PENDING,
         },
     });
     if (existingPendingRequest) {
@@ -677,7 +683,7 @@ const requestRoomChange = async (userId, payload) => {
         throw new Error("Target room cannot be the same as your current room.");
     }
     if (payload.targetHallId) {
-        const targetHall = await prisma.hall.findUnique({
+        const targetHall = await prisma_1.prisma.hall.findUnique({
             where: { id: payload.targetHallId },
         });
         if (!targetHall || !targetHall.isActive) {
@@ -688,7 +694,7 @@ const requestRoomChange = async (userId, payload) => {
         }
     }
     if (payload.targetRoomId) {
-        const targetRoom = await prisma.room.findUnique({
+        const targetRoom = await prisma_1.prisma.room.findUnique({
             where: { id: payload.targetRoomId },
             include: { hall: true },
         });
@@ -702,7 +708,7 @@ const requestRoomChange = async (userId, payload) => {
             throw new Error("Preferred target room belongs to a hall of a different gender.");
         }
     }
-    const request = await prisma.roomChangeRequest.create({
+    const request = await prisma_1.prisma.roomChangeRequest.create({
         data: {
             studentId: student.id,
             currentRoomId: student.roomId,
@@ -731,13 +737,13 @@ const requestRoomChange = async (userId, payload) => {
     return request;
 };
 const getMyRoomChangeRequests = async (userId) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
     });
     if (!student || student.isDeleted) {
         throw new Error("Student profile not found.");
     }
-    return prisma.roomChangeRequest.findMany({
+    return prisma_1.prisma.roomChangeRequest.findMany({
         where: { studentId: student.id },
         orderBy: { createdAt: "desc" },
         include: {
@@ -765,7 +771,7 @@ const getAllRoomChangeRequests = async (query) => {
     if (query.status) {
         whereClause.status = query.status;
     }
-    return prisma.roomChangeRequest.findMany({
+    return prisma_1.prisma.roomChangeRequest.findMany({
         where: whereClause,
         orderBy: { createdAt: "asc" },
         include: {
@@ -798,7 +804,7 @@ const getAllRoomChangeRequests = async (query) => {
     });
 };
 const approveRoomChange = async (reviewerUserId, requestId, payload) => {
-    const request = await prisma.roomChangeRequest.findUnique({
+    const request = await prisma_1.prisma.roomChangeRequest.findUnique({
         where: { id: requestId },
         include: {
             student: true,
@@ -812,7 +818,7 @@ const approveRoomChange = async (reviewerUserId, requestId, payload) => {
     if (!request) {
         throw new Error("Room change request not found.");
     }
-    if (request.status !== ApplicationStatus.PENDING) {
+    if (request.status !== enums_1.ApplicationStatus.PENDING) {
         throw new Error(`This room change request has already been ${request.status.toLowerCase()}.`);
     }
     if (!request.student.isResident || !request.student.roomId) {
@@ -821,7 +827,7 @@ const approveRoomChange = async (reviewerUserId, requestId, payload) => {
     if (payload.targetRoomId === request.student.roomId) {
         throw new Error("New room must be different from the student's current room.");
     }
-    const targetHall = await prisma.hall.findUnique({
+    const targetHall = await prisma_1.prisma.hall.findUnique({
         where: { id: payload.targetHallId },
     });
     if (!targetHall || !targetHall.isActive) {
@@ -831,17 +837,17 @@ const approveRoomChange = async (reviewerUserId, requestId, payload) => {
         targetHall.genderType !== request.student.gender) {
         throw new Error(`Gender mismatch! Cannot transfer a ${request.student.gender} student to ${targetHall.shortName}.`);
     }
-    const targetRoom = await prisma.room.findUnique({
+    const targetRoom = await prisma_1.prisma.room.findUnique({
         where: { id: payload.targetRoomId },
     });
     if (!targetRoom || targetRoom.hallId !== targetHall.id) {
         throw new Error("Target room does not belong to the specified hall.");
     }
-    if (targetRoom.status !== RoomStatus.AVAILABLE ||
+    if (targetRoom.status !== enums_1.RoomStatus.AVAILABLE ||
         targetRoom.occupiedCount >= targetRoom.capacity) {
         throw new Error(`Target room ${targetRoom.roomNumber} is not available.`);
     }
-    const updatedRequest = await prisma.$transaction(async (tx) => {
+    const updatedRequest = await prisma_1.prisma.$transaction(async (tx) => {
         // 1. Release seat from old room
         const oldRoom = await tx.room.findUnique({
             where: { id: request.student.roomId },
@@ -852,9 +858,9 @@ const approveRoomChange = async (reviewerUserId, requestId, payload) => {
                 where: { id: oldRoom.id },
                 data: {
                     occupiedCount: decremented,
-                    status: oldRoom.status === RoomStatus.MAINTENANCE
-                        ? RoomStatus.MAINTENANCE
-                        : RoomStatus.AVAILABLE,
+                    status: oldRoom.status === enums_1.RoomStatus.MAINTENANCE
+                        ? enums_1.RoomStatus.MAINTENANCE
+                        : enums_1.RoomStatus.AVAILABLE,
                 },
             });
         }
@@ -865,8 +871,8 @@ const approveRoomChange = async (reviewerUserId, requestId, payload) => {
             data: {
                 occupiedCount: incremented,
                 status: incremented >= targetRoom.capacity
-                    ? RoomStatus.FULL
-                    : RoomStatus.AVAILABLE,
+                    ? enums_1.RoomStatus.FULL
+                    : enums_1.RoomStatus.AVAILABLE,
             },
         });
         // 3. Update student assignment
@@ -881,7 +887,7 @@ const approveRoomChange = async (reviewerUserId, requestId, payload) => {
         return tx.roomChangeRequest.update({
             where: { id: request.id },
             data: {
-                status: ApplicationStatus.APPROVED,
+                status: enums_1.ApplicationStatus.APPROVED,
                 targetHallId: targetHall.id,
                 targetRoomId: targetRoom.id,
                 adminNote: payload.adminNote?.trim() ?? null,
@@ -928,20 +934,20 @@ const approveRoomChange = async (reviewerUserId, requestId, payload) => {
     return updatedRequest;
 };
 const rejectRoomChange = async (reviewerUserId, requestId, payload) => {
-    const request = await prisma.roomChangeRequest.findUnique({
+    const request = await prisma_1.prisma.roomChangeRequest.findUnique({
         where: { id: requestId },
         include: { student: true },
     });
     if (!request) {
         throw new Error("Room change request not found.");
     }
-    if (request.status !== ApplicationStatus.PENDING) {
+    if (request.status !== enums_1.ApplicationStatus.PENDING) {
         throw new Error(`This room change request has already been ${request.status.toLowerCase()}.`);
     }
-    const updated = await prisma.roomChangeRequest.update({
+    const updated = await prisma_1.prisma.roomChangeRequest.update({
         where: { id: request.id },
         data: {
-            status: ApplicationStatus.REJECTED,
+            status: enums_1.ApplicationStatus.REJECTED,
             adminNote: payload.adminNote.trim(),
             reviewedById: reviewerUserId,
             reviewedAt: new Date(),
@@ -962,7 +968,7 @@ const rejectRoomChange = async (reviewerUserId, requestId, payload) => {
 };
 // 5. SEAT CANCELLATION (SELF OR ADMIN)
 const cancelSeatByStudent = async (userId, payload) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
         include: {
             hall: true,
@@ -977,25 +983,25 @@ const cancelSeatByStudent = async (userId, payload) => {
     }
     const previousHallName = student.hall?.shortName ?? "Hall";
     const previousRoomNumber = student.room.roomNumber;
-    const updatedStudent = await prisma.$transaction(async (tx) => {
+    const updatedStudent = await prisma_1.prisma.$transaction(async (tx) => {
         const decremented = Math.max(0, student.room.occupiedCount - 1);
         await tx.room.update({
             where: { id: student.roomId },
             data: {
                 occupiedCount: decremented,
-                status: student.room.status === RoomStatus.MAINTENANCE
-                    ? RoomStatus.MAINTENANCE
-                    : RoomStatus.AVAILABLE,
+                status: student.room.status === enums_1.RoomStatus.MAINTENANCE
+                    ? enums_1.RoomStatus.MAINTENANCE
+                    : enums_1.RoomStatus.AVAILABLE,
             },
         });
         // Reject any open room change requests
         await tx.roomChangeRequest.updateMany({
             where: {
                 studentId: student.id,
-                status: ApplicationStatus.PENDING,
+                status: enums_1.ApplicationStatus.PENDING,
             },
             data: {
-                status: ApplicationStatus.REJECTED,
+                status: enums_1.ApplicationStatus.REJECTED,
                 adminNote: "Automatically closed because student cancelled hall seat.",
                 reviewedAt: new Date(),
             },
@@ -1027,7 +1033,7 @@ const cancelSeatByStudent = async (userId, payload) => {
     return updatedStudent;
 };
 const cancelSeatByAdmin = async (studentId, payload) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { id: studentId },
         include: {
             hall: true,
@@ -1042,24 +1048,24 @@ const cancelSeatByAdmin = async (studentId, payload) => {
     }
     const previousHallName = student.hall?.shortName ?? "Hall";
     const previousRoomNumber = student.room.roomNumber;
-    const updatedStudent = await prisma.$transaction(async (tx) => {
+    const updatedStudent = await prisma_1.prisma.$transaction(async (tx) => {
         const decremented = Math.max(0, student.room.occupiedCount - 1);
         await tx.room.update({
             where: { id: student.roomId },
             data: {
                 occupiedCount: decremented,
-                status: student.room.status === RoomStatus.MAINTENANCE
-                    ? RoomStatus.MAINTENANCE
-                    : RoomStatus.AVAILABLE,
+                status: student.room.status === enums_1.RoomStatus.MAINTENANCE
+                    ? enums_1.RoomStatus.MAINTENANCE
+                    : enums_1.RoomStatus.AVAILABLE,
             },
         });
         await tx.roomChangeRequest.updateMany({
             where: {
                 studentId: student.id,
-                status: ApplicationStatus.PENDING,
+                status: enums_1.ApplicationStatus.PENDING,
             },
             data: {
-                status: ApplicationStatus.REJECTED,
+                status: enums_1.ApplicationStatus.REJECTED,
                 adminNote: "Automatically closed upon administrative seat cancellation.",
                 reviewedAt: new Date(),
             },
@@ -1093,15 +1099,15 @@ const cancelSeatByAdmin = async (studentId, payload) => {
 // 6. SMART ANALYTICS DASHBOARD
 const getSeatAnalytics = async () => {
     const [pendingApplicationsByGender, pendingRoomChanges, rooms, residentsByDepartment,] = await Promise.all([
-        prisma.seatApplication.groupBy({
+        prisma_1.prisma.seatApplication.groupBy({
             by: ["gender"],
-            where: { status: ApplicationStatus.PENDING },
+            where: { status: enums_1.ApplicationStatus.PENDING },
             _count: { id: true },
         }),
-        prisma.roomChangeRequest.count({
-            where: { status: ApplicationStatus.PENDING },
+        prisma_1.prisma.roomChangeRequest.count({
+            where: { status: enums_1.ApplicationStatus.PENDING },
         }),
-        prisma.room.findMany({
+        prisma_1.prisma.room.findMany({
             where: { hall: { isActive: true } },
             select: {
                 capacity: true,
@@ -1109,7 +1115,7 @@ const getSeatAnalytics = async () => {
                 status: true,
             },
         }),
-        prisma.student.groupBy({
+        prisma_1.prisma.student.groupBy({
             by: ["department"],
             where: {
                 isResident: true,
@@ -1125,7 +1131,7 @@ const getSeatAnalytics = async () => {
     for (const room of rooms) {
         totalCapacity += room.capacity;
         totalOccupied += room.occupiedCount;
-        if (room.status === RoomStatus.MAINTENANCE) {
+        if (room.status === enums_1.RoomStatus.MAINTENANCE) {
             maintenanceRooms += 1;
         }
         else {
@@ -1159,13 +1165,13 @@ const getSeatAnalytics = async () => {
 };
 // 1. STUDENT: Withdraw/Cancel Pending Room Change Request
 const cancelMyRoomChangeRequest = async (userId, requestId) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
     });
     if (!student || student.isDeleted) {
         throw new Error("Student profile not found.");
     }
-    const request = await prisma.roomChangeRequest.findUnique({
+    const request = await prisma_1.prisma.roomChangeRequest.findUnique({
         where: { id: requestId },
     });
     if (!request) {
@@ -1174,13 +1180,13 @@ const cancelMyRoomChangeRequest = async (userId, requestId) => {
     if (request.studentId !== student.id) {
         throw new Error("You are not authorized to cancel this request.");
     }
-    if (request.status !== ApplicationStatus.PENDING) {
+    if (request.status !== enums_1.ApplicationStatus.PENDING) {
         throw new Error(`Cannot cancel a request that has already been ${request.status.toLowerCase()}.`);
     }
-    return prisma.roomChangeRequest.update({
+    return prisma_1.prisma.roomChangeRequest.update({
         where: { id: requestId },
         data: {
-            status: ApplicationStatus.CANCELLED,
+            status: enums_1.ApplicationStatus.CANCELLED,
         },
     });
 };
@@ -1215,7 +1221,7 @@ const getAllResidents = async (query) => {
             { contactNumber: { contains: query.searchTerm, mode: "insensitive" } },
         ];
     }
-    const residents = await prisma.student.findMany({
+    const residents = await prisma_1.prisma.student.findMany({
         where: whereClause,
         orderBy: [{ hall: { shortName: "asc" } }, { room: { roomNumber: "asc" } }],
         select: {
@@ -1258,7 +1264,7 @@ const getAllResidents = async (query) => {
 };
 // 3. STUDENT: Get Complete Seat & Room Change Timeline History
 const getMySeatHistory = async (userId) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
         include: {
             hall: { select: { id: true, name: true, shortName: true } },
@@ -1269,7 +1275,7 @@ const getMySeatHistory = async (userId) => {
         throw new Error("Student profile not found.");
     }
     const [applications, roomChanges] = await Promise.all([
-        prisma.seatApplication.findMany({
+        prisma_1.prisma.seatApplication.findMany({
             where: { studentId: student.id },
             orderBy: { createdAt: "desc" },
             include: {
@@ -1281,7 +1287,7 @@ const getMySeatHistory = async (userId) => {
                 },
             },
         }),
-        prisma.roomChangeRequest.findMany({
+        prisma_1.prisma.roomChangeRequest.findMany({
             where: { studentId: student.id },
             orderBy: { createdAt: "desc" },
             include: {
@@ -1307,7 +1313,7 @@ const getMySeatHistory = async (userId) => {
         roomChangeHistory: roomChanges,
     };
 };
-export const SeatService = {
+exports.SeatService = {
     applyForSeat,
     getMySeatApplications,
     cancelMySeatApplication,

@@ -1,36 +1,39 @@
-import { Router } from "express";
-import { Role } from "../../../generated/prisma/enums";
-import { auth } from "../../middleware/checkAuth";
-import { validateRequest } from "../../middleware/validateRequest";
-import { SeatController } from "./seat.controller";
-import { SeatValidation } from "./seat.validation";
-const router = Router();
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SeatRoutes = void 0;
+const express_1 = require("express");
+const enums_1 = require("../../../generated/prisma/enums");
+const checkAuth_1 = require("../../middleware/checkAuth");
+const validateRequest_1 = require("../../middleware/validateRequest");
+const seat_controller_1 = require("./seat.controller");
+const seat_validation_1 = require("./seat.validation");
+const router = (0, express_1.Router)();
 // 1. SEAT ANALYTICS (Admin & Super Admin)
-router.get("/analytics", auth(Role.SUPER_ADMIN, Role.ADMIN), SeatController.getSeatAnalytics);
+router.get("/analytics", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), seat_controller_1.SeatController.getSeatAnalytics);
 //Problem THIS ROUTE ONNO TOKEN USE KOREO APPLY KORA JACCHE
 // 2. SEAT APPLICATION ROUTES
-router.post("/apply", auth(Role.STUDENT), validateRequest(SeatValidation.ApplySeatZodSchema), SeatController.applyForSeat);
-router.get("/my-applications", auth(Role.STUDENT), SeatController.getMySeatApplications);
-router.patch("/applications/:applicationId/cancel", auth(Role.STUDENT), SeatController.cancelMySeatApplication);
-router.get("/my-seat", auth(Role.STUDENT), SeatController.getMyCurrentSeat);
-router.get("/applications", auth(Role.SUPER_ADMIN, Role.ADMIN), SeatController.getAllSeatApplications);
-router.get("/applications/:applicationId/recommended-rooms", auth(Role.SUPER_ADMIN, Role.ADMIN), SeatController.getRecommendedRooms);
-router.patch("/applications/:applicationId/approve", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(SeatValidation.ApproveSeatApplicationZodSchema), SeatController.approveSeatApplication);
-router.patch("/applications/:applicationId/reject", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(SeatValidation.RejectSeatApplicationZodSchema), SeatController.rejectSeatApplication);
-router.post("/direct-allocate", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(SeatValidation.DirectAllocateSeatZodSchema), SeatController.directAllocateSeat);
+router.post("/apply", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), (0, validateRequest_1.validateRequest)(seat_validation_1.SeatValidation.ApplySeatZodSchema), seat_controller_1.SeatController.applyForSeat);
+router.get("/my-applications", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), seat_controller_1.SeatController.getMySeatApplications);
+router.patch("/applications/:applicationId/cancel", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), seat_controller_1.SeatController.cancelMySeatApplication);
+router.get("/my-seat", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), seat_controller_1.SeatController.getMyCurrentSeat);
+router.get("/applications", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), seat_controller_1.SeatController.getAllSeatApplications);
+router.get("/applications/:applicationId/recommended-rooms", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), seat_controller_1.SeatController.getRecommendedRooms);
+router.patch("/applications/:applicationId/approve", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(seat_validation_1.SeatValidation.ApproveSeatApplicationZodSchema), seat_controller_1.SeatController.approveSeatApplication);
+router.patch("/applications/:applicationId/reject", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(seat_validation_1.SeatValidation.RejectSeatApplicationZodSchema), seat_controller_1.SeatController.rejectSeatApplication);
+router.post("/direct-allocate", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(seat_validation_1.SeatValidation.DirectAllocateSeatZodSchema), seat_controller_1.SeatController.directAllocateSeat);
 // 3. ROOM CHANGE REQUEST ROUTES
-router.post("/room-change", auth(Role.STUDENT), validateRequest(SeatValidation.CreateRoomChangeZodSchema), SeatController.requestRoomChange);
-router.get("/my-room-changes", auth(Role.STUDENT), SeatController.getMyRoomChangeRequests);
-router.get("/room-change", auth(Role.SUPER_ADMIN, Role.ADMIN), SeatController.getAllRoomChangeRequests);
-router.patch("/room-change/:requestId/approve", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(SeatValidation.ApproveRoomChangeZodSchema), SeatController.approveRoomChange);
-router.patch("/room-change/:requestId/reject", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(SeatValidation.RejectRoomChangeZodSchema), SeatController.rejectRoomChange);
+router.post("/room-change", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), (0, validateRequest_1.validateRequest)(seat_validation_1.SeatValidation.CreateRoomChangeZodSchema), seat_controller_1.SeatController.requestRoomChange);
+router.get("/my-room-changes", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), seat_controller_1.SeatController.getMyRoomChangeRequests);
+router.get("/room-change", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), seat_controller_1.SeatController.getAllRoomChangeRequests);
+router.patch("/room-change/:requestId/approve", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(seat_validation_1.SeatValidation.ApproveRoomChangeZodSchema), seat_controller_1.SeatController.approveRoomChange);
+router.patch("/room-change/:requestId/reject", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(seat_validation_1.SeatValidation.RejectRoomChangeZodSchema), seat_controller_1.SeatController.rejectRoomChange);
 // 4. SEAT CANCELLATION ROUTES
-router.post("/cancel-my-seat", auth(Role.STUDENT), validateRequest(SeatValidation.CancelSeatZodSchema), SeatController.cancelSeatByStudent);
-router.post("/cancel/:studentId", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(SeatValidation.CancelSeatZodSchema), SeatController.cancelSeatByAdmin);
+router.post("/cancel-my-seat", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), (0, validateRequest_1.validateRequest)(seat_validation_1.SeatValidation.CancelSeatZodSchema), seat_controller_1.SeatController.cancelSeatByStudent);
+router.post("/cancel/:studentId", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(seat_validation_1.SeatValidation.CancelSeatZodSchema), seat_controller_1.SeatController.cancelSeatByAdmin);
 // Resident List (Admin & Super Admin)
-router.get("/residents", auth(Role.SUPER_ADMIN, Role.ADMIN), SeatController.getAllResidents);
+router.get("/residents", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), seat_controller_1.SeatController.getAllResidents);
 // Student Seat History
-router.get("/my-history", auth(Role.STUDENT), SeatController.getMySeatHistory);
+router.get("/my-history", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), seat_controller_1.SeatController.getMySeatHistory);
 // Cancel Pending Room Change Request (Student)
-router.patch("/room-change/:requestId/cancel", auth(Role.STUDENT), SeatController.cancelMyRoomChangeRequest);
-export const SeatRoutes = router;
+router.patch("/room-change/:requestId/cancel", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), seat_controller_1.SeatController.cancelMyRoomChangeRequest);
+exports.SeatRoutes = router;

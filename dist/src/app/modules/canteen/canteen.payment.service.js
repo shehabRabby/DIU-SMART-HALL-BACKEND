@@ -1,21 +1,27 @@
-import axios from "axios";
-import crypto from "crypto";
-import nodemailer from "nodemailer";
-import Stripe from "stripe";
-import { FoodOrderStatus, FoodPaymentMethod, FoodPaymentStatus, } from "../../../generated/prisma/enums";
-import config from "../../config";
-import { prisma } from "../../lib/prisma";
-import { assertBeforeCutoffDeadline, getSlotScheduleWindows, } from "./canteen.utils";
-const getStripeSecretKey = () => config.stripe
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CanteenPaymentService = void 0;
+const axios_1 = __importDefault(require("axios"));
+const crypto_1 = __importDefault(require("crypto"));
+const nodemailer_1 = __importDefault(require("nodemailer"));
+const stripe_1 = __importDefault(require("stripe"));
+const enums_1 = require("../../../generated/prisma/enums");
+const config_1 = __importDefault(require("../../config"));
+const prisma_1 = require("../../lib/prisma");
+const canteen_utils_1 = require("./canteen.utils");
+const getStripeSecretKey = () => config_1.default.stripe
     ?.secret_key ||
     process.env.STRIPE_SECRET_KEY ||
     "";
-const getStripeWebhookSecret = () => config.stripe
+const getStripeWebhookSecret = () => config_1.default.stripe
     ?.webhook_secret ||
     process.env.STRIPE_WEBHOOK_SECRET ||
     "";
 const getBkashConfig = () => {
-    const cfg = config.bkash;
+    const cfg = config_1.default.bkash;
     return {
         base_url: cfg?.base_url ||
             process.env.BKASH_BASE_URL ||
@@ -26,12 +32,12 @@ const getBkashConfig = () => {
         password: cfg?.password || process.env.BKASH_PASSWORD || "",
     };
 };
-const getBackendUrl = () => config.backend_url ||
+const getBackendUrl = () => config_1.default.backend_url ||
     process.env.BACKEND_URL ||
     "http://localhost:5000/api/v1";
-const getFrontendUrl = () => config.frontend_url || process.env.FRONTEND_URL || "http://localhost:3000";
+const getFrontendUrl = () => config_1.default.frontend_url || process.env.FRONTEND_URL || "http://localhost:3000";
 const stripeSecretKey = getStripeSecretKey();
-const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
+const stripe = stripeSecretKey ? new stripe_1.default(stripeSecretKey) : null;
 /**
  * Helper: Send Official Digital Meal Slip via Email (SRS Section 4: App + Email)
  */
@@ -41,7 +47,7 @@ const sendDigitalMealSlipEmail = async (orderId) => {
         const smtpPass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
         if (!smtpUser || !smtpPass)
             return;
-        const order = await prisma.foodOrder.findUnique({
+        const order = await prisma_1.prisma.foodOrder.findUnique({
             where: { id: orderId },
             include: {
                 items: true,
@@ -56,7 +62,7 @@ const sendDigitalMealSlipEmail = async (orderId) => {
         });
         if (!order || !order.student.user.email)
             return;
-        const schedule = getSlotScheduleWindows(order.mealDate, order.mealSlot);
+        const schedule = (0, canteen_utils_1.getSlotScheduleWindows)(order.mealDate, order.mealSlot);
         const mealDateFormatted = order.mealDate.toISOString().split("T")[0];
         const itemsRows = order.items
             .map((item) => `<tr>
@@ -65,7 +71,7 @@ const sendDigitalMealSlipEmail = async (orderId) => {
             <td style="padding:8px;border:1px solid #ddd;text-align:right;">${item.subtotal.toFixed(2)} BDT</td>
           </tr>`)
             .join("");
-        const transporter = nodemailer.createTransport({
+        const transporter = nodemailer_1.default.createTransport({
             host: process.env.EMAIL_HOST || "smtp.gmail.com",
             port: Number(process.env.EMAIL_PORT) || 587,
             secure: false,
@@ -111,7 +117,7 @@ const sendDigitalMealSlipEmail = async (orderId) => {
  * Enforces exact amount match (paidAmount === totalAmount) & idempotency
  */
 const confirmOrderPaymentSuccess = async (tranId, gatewayRefId, verifiedPaidAmount, rawResponse) => {
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma_1.prisma.$transaction(async (tx) => {
         const paymentTx = await tx.paymentTransaction.findUnique({
             where: { tranId },
             include: { order: true },
@@ -120,7 +126,7 @@ const confirmOrderPaymentSuccess = async (tranId, gatewayRefId, verifiedPaidAmou
             throw new Error(`Payment transaction not found for tranId: ${tranId}`);
         }
         // Idempotency guard (if webhook & redirect callback fire together)
-        if (paymentTx.status === FoodPaymentStatus.PAID) {
+        if (paymentTx.status === enums_1.FoodPaymentStatus.PAID) {
             return { paymentTx, newlyConfirmed: false };
         }
         // Zero-Trust Amount Integrity Check (SRS Section 4)
@@ -131,7 +137,7 @@ const confirmOrderPaymentSuccess = async (tranId, gatewayRefId, verifiedPaidAmou
         const updatedTx = await tx.paymentTransaction.update({
             where: { id: paymentTx.id },
             data: {
-                status: FoodPaymentStatus.PAID,
+                status: enums_1.FoodPaymentStatus.PAID,
                 gatewayRefId,
                 rawResponse: rawResponse,
                 verifiedAt: now,
@@ -140,8 +146,8 @@ const confirmOrderPaymentSuccess = async (tranId, gatewayRefId, verifiedPaidAmou
         await tx.foodOrder.update({
             where: { id: paymentTx.orderId },
             data: {
-                paymentStatus: FoodPaymentStatus.PAID,
-                orderStatus: FoodOrderStatus.CONFIRMED,
+                paymentStatus: enums_1.FoodPaymentStatus.PAID,
+                orderStatus: enums_1.FoodOrderStatus.CONFIRMED,
                 paidAt: now,
             },
         });
@@ -159,31 +165,31 @@ const initiateStripePayment = async (userId, orderId) => {
     if (!stripe) {
         throw new Error("Stripe gateway is not configured on the server.");
     }
-    const student = await prisma.student.findUnique({ where: { userId } });
+    const student = await prisma_1.prisma.student.findUnique({ where: { userId } });
     if (!student)
         throw new Error("Student profile not found.");
-    const order = await prisma.foodOrder.findFirst({
+    const order = await prisma_1.prisma.foodOrder.findFirst({
         where: { id: orderId, studentId: student.id },
         include: { items: true, hall: true },
     });
     if (!order)
         throw new Error("Food order not found.");
-    if (order.paymentStatus === FoodPaymentStatus.PAID) {
+    if (order.paymentStatus === enums_1.FoodPaymentStatus.PAID) {
         throw new Error("This order is already paid.");
     }
-    if (order.orderStatus === FoodOrderStatus.CANCELLED) {
+    if (order.orderStatus === enums_1.FoodOrderStatus.CANCELLED) {
         throw new Error("Cannot pay for a cancelled order.");
     }
     // Enforce 6-hour cut-off before initiating online payment
-    assertBeforeCutoffDeadline(order.mealDate, order.mealSlot);
-    const tranId = `STR-${order.orderCode}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
-    await prisma.paymentTransaction.create({
+    (0, canteen_utils_1.assertBeforeCutoffDeadline)(order.mealDate, order.mealSlot);
+    const tranId = `STR-${order.orderCode}-${crypto_1.default.randomBytes(3).toString("hex").toUpperCase()}`;
+    await prisma_1.prisma.paymentTransaction.create({
         data: {
             tranId,
-            gateway: FoodPaymentMethod.STRIPE,
+            gateway: enums_1.FoodPaymentMethod.STRIPE,
             amount: order.totalAmount,
             currency: "BDT",
-            status: FoodPaymentStatus.UNPAID,
+            status: enums_1.FoodPaymentStatus.UNPAID,
             orderId: order.id,
             studentId: student.id,
         },
@@ -213,7 +219,7 @@ const initiateStripePayment = async (userId, orderId) => {
         cancel_url: `${frontendUrl}/canteen/payment/cancel?gateway=STRIPE&tranId=${tranId}`,
     });
     return {
-        gateway: FoodPaymentMethod.STRIPE,
+        gateway: enums_1.FoodPaymentMethod.STRIPE,
         tranId,
         checkoutUrl: session.url,
         sessionId: session.id,
@@ -264,7 +270,7 @@ const getBkashGrantToken = async () => {
     if (!app_key || !app_secret || !username || !password) {
         throw new Error("bKash Sandbox credentials are not configured in .env.");
     }
-    const response = await axios.post(`${base_url}/tokenized/checkout/token/grant`, {
+    const response = await axios_1.default.post(`${base_url}/tokenized/checkout/token/grant`, {
         app_key,
         app_secret,
     }, {
@@ -281,38 +287,38 @@ const getBkashGrantToken = async () => {
     return response.data.id_token;
 };
 const initiateBkashPayment = async (userId, orderId) => {
-    const student = await prisma.student.findUnique({ where: { userId } });
+    const student = await prisma_1.prisma.student.findUnique({ where: { userId } });
     if (!student)
         throw new Error("Student profile not found.");
-    const order = await prisma.foodOrder.findFirst({
+    const order = await prisma_1.prisma.foodOrder.findFirst({
         where: { id: orderId, studentId: student.id },
     });
     if (!order)
         throw new Error("Food order not found.");
-    if (order.paymentStatus === FoodPaymentStatus.PAID) {
+    if (order.paymentStatus === enums_1.FoodPaymentStatus.PAID) {
         throw new Error("This order is already paid.");
     }
-    if (order.orderStatus === FoodOrderStatus.CANCELLED) {
+    if (order.orderStatus === enums_1.FoodOrderStatus.CANCELLED) {
         throw new Error("Cannot pay for a cancelled order.");
     }
     // Enforce 6-hour cut-off before initiating online payment
-    assertBeforeCutoffDeadline(order.mealDate, order.mealSlot);
+    (0, canteen_utils_1.assertBeforeCutoffDeadline)(order.mealDate, order.mealSlot);
     const bkashCfg = getBkashConfig();
     const idToken = await getBkashGrantToken();
-    const tranId = `BKS-${order.orderCode}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+    const tranId = `BKS-${order.orderCode}-${crypto_1.default.randomBytes(3).toString("hex").toUpperCase()}`;
     const callbackURL = `${getBackendUrl()}/canteen/payments/bkash/callback?tranId=${tranId}`;
-    await prisma.paymentTransaction.create({
+    await prisma_1.prisma.paymentTransaction.create({
         data: {
             tranId,
-            gateway: FoodPaymentMethod.BKASH,
+            gateway: enums_1.FoodPaymentMethod.BKASH,
             amount: order.totalAmount,
             currency: "BDT",
-            status: FoodPaymentStatus.UNPAID,
+            status: enums_1.FoodPaymentStatus.UNPAID,
             orderId: order.id,
             studentId: student.id,
         },
     });
-    const createRes = await axios.post(`${bkashCfg.base_url}/tokenized/checkout/create`, {
+    const createRes = await axios_1.default.post(`${bkashCfg.base_url}/tokenized/checkout/create`, {
         mode: "0011",
         payerReference: student.studentUniId || student.id,
         callbackURL,
@@ -332,7 +338,7 @@ const initiateBkashPayment = async (userId, orderId) => {
         throw new Error(`bKash Create Payment Failed: ${createRes.data?.statusMessage || "Unable to create bKash session"}`);
     }
     return {
-        gateway: FoodPaymentMethod.BKASH,
+        gateway: enums_1.FoodPaymentMethod.BKASH,
         tranId,
         paymentID: createRes.data.paymentID,
         bkashURL: createRes.data.bkashURL,
@@ -341,10 +347,10 @@ const initiateBkashPayment = async (userId, orderId) => {
 const executeBkashCallback = async (tranId, paymentID, status) => {
     const frontendUrl = getFrontendUrl();
     if (status !== "success" || !paymentID) {
-        await prisma.paymentTransaction.updateMany({
-            where: { tranId, status: FoodPaymentStatus.UNPAID },
+        await prisma_1.prisma.paymentTransaction.updateMany({
+            where: { tranId, status: enums_1.FoodPaymentStatus.UNPAID },
             data: {
-                status: FoodPaymentStatus.FAILED,
+                status: enums_1.FoodPaymentStatus.FAILED,
                 rawResponse: { paymentID, status },
             },
         });
@@ -356,7 +362,7 @@ const executeBkashCallback = async (tranId, paymentID, status) => {
     const bkashCfg = getBkashConfig();
     const idToken = await getBkashGrantToken();
     try {
-        const execRes = await axios.post(`${bkashCfg.base_url}/tokenized/checkout/execute`, { paymentID }, {
+        const execRes = await axios_1.default.post(`${bkashCfg.base_url}/tokenized/checkout/execute`, { paymentID }, {
             headers: {
                 "Content-Type": "application/json",
                 Accept: "application/json",
@@ -379,7 +385,7 @@ const executeBkashCallback = async (tranId, paymentID, status) => {
     }
     catch (err) {
         // Fallback: Query Payment API per bKash official recommendation
-        const queryRes = await axios.post(`${bkashCfg.base_url}/tokenized/checkout/payment/status`, { paymentID }, {
+        const queryRes = await axios_1.default.post(`${bkashCfg.base_url}/tokenized/checkout/payment/status`, { paymentID }, {
             headers: {
                 "Content-Type": "application/json",
                 Accept: "application/json",
@@ -402,25 +408,25 @@ const executeBkashCallback = async (tranId, paymentID, status) => {
 // 3. UNIFIED GATEWAY ROUTER (Supports Active + Pending Gateways Cleanly)
 // ============================================================================
 const initiateOrderPayment = async (userId, orderId) => {
-    const student = await prisma.student.findUnique({ where: { userId } });
+    const student = await prisma_1.prisma.student.findUnique({ where: { userId } });
     if (!student)
         throw new Error("Student profile not found.");
-    const order = await prisma.foodOrder.findFirst({
+    const order = await prisma_1.prisma.foodOrder.findFirst({
         where: { id: orderId, studentId: student.id },
     });
     if (!order)
         throw new Error("Food order not found.");
     switch (order.paymentMethod) {
-        case FoodPaymentMethod.STRIPE:
+        case enums_1.FoodPaymentMethod.STRIPE:
             return initiateStripePayment(userId, orderId);
-        case FoodPaymentMethod.BKASH:
+        case enums_1.FoodPaymentMethod.BKASH:
             return initiateBkashPayment(userId, orderId);
-        case FoodPaymentMethod.NAGAD:
+        case enums_1.FoodPaymentMethod.NAGAD:
             if (!process.env.NAGAD_MERCHANT_ID || !process.env.NAGAD_PRIVATE_KEY) {
                 throw new Error("Nagad Sandbox credentials are currently pending. Please use bKash, Stripe, DIU 1Card, or Counter Cash.");
             }
             throw new Error("Nagad gateway handler ready for merchant credentials.");
-        case FoodPaymentMethod.ROCKET:
+        case enums_1.FoodPaymentMethod.ROCKET:
             if (!process.env.ROCKET_MERCHANT_ID || !process.env.ROCKET_SECRET_KEY) {
                 throw new Error("Rocket gateway credentials are currently pending. Please use bKash, Stripe, DIU 1Card, or Counter Cash.");
             }
@@ -429,7 +435,7 @@ const initiateOrderPayment = async (userId, orderId) => {
             throw new Error(`Online gateway initiation is not required for payment method: ${order.paymentMethod}.`);
     }
 };
-export const CanteenPaymentService = {
+exports.CanteenPaymentService = {
     initiateOrderPayment,
     initiateStripePayment,
     handleStripeWebhook,

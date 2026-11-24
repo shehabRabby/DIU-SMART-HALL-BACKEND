@@ -1,14 +1,20 @@
-import bcrypt from "bcryptjs";
-import { ComplaintStatus, FoodOrderStatus, FoodPaymentMethod, FoodPaymentStatus, MenuApprovalStatus, Role, TokenStatus, UserStatus, } from "../../../generated/prisma/enums";
-import config from "../../config";
-import { prisma } from "../../lib/prisma";
-import { sendDigitalMealSlipEmail } from "./canteen.mail";
-import { assertBeforeCutoffDeadline, assertWithinServingWindow, generateOrderSecurityCredentials, getSlotScheduleWindows, normalizeMealDate, verifyQrTokenSignature, } from "./canteen.utils";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CanteenService = void 0;
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const enums_1 = require("../../../generated/prisma/enums");
+const config_1 = __importDefault(require("../../config"));
+const prisma_1 = require("../../lib/prisma");
+const canteen_mail_1 = require("./canteen.mail");
+const canteen_utils_1 = require("./canteen.utils");
 /**
  * Helper 1: Verify Student is an active, non-expelled resident of a Hall
  */
 const verifyResidentStudent = async (userId) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
         include: {
             user: {
@@ -21,7 +27,7 @@ const verifyResidentStudent = async (userId) => {
     });
     if (!student ||
         student.isDeleted ||
-        student.user.status !== UserStatus.ACTIVE) {
+        student.user.status !== enums_1.UserStatus.ACTIVE) {
         throw new Error("Active student profile not found.");
     }
     if (student.isExpelled) {
@@ -36,7 +42,7 @@ const verifyResidentStudent = async (userId) => {
  * Helper 2: Verify Canteen Owner profile and ensure Hall isolation
  */
 const verifyCanteenOwner = async (userId) => {
-    const profile = await prisma.canteenOwnerProfile.findUnique({
+    const profile = await prisma_1.prisma.canteenOwnerProfile.findUnique({
         where: { userId },
         include: {
             hall: { select: { id: true, name: true, shortName: true } },
@@ -45,7 +51,7 @@ const verifyCanteenOwner = async (userId) => {
     });
     if (!profile ||
         !profile.isActive ||
-        profile.user.status !== UserStatus.ACTIVE) {
+        profile.user.status !== enums_1.UserStatus.ACTIVE) {
         throw new Error("Active Canteen Owner profile not found or suspended. Please contact Hall Admin.");
     }
     return profile;
@@ -54,7 +60,7 @@ const verifyCanteenOwner = async (userId) => {
 // 1. ADMIN GOVERNANCE (Canteen Owner Creation, Suspension & Master Price Control)
 // ============================================================================
 const createCanteenOwner = async (payload) => {
-    const hall = await prisma.hall.findUnique({
+    const hall = await prisma_1.prisma.hall.findUnique({
         where: { id: payload.hallId },
         include: { canteenOwner: true },
     });
@@ -64,18 +70,18 @@ const createCanteenOwner = async (payload) => {
     if (hall.canteenOwner) {
         throw new Error(`Hall ${hall.shortName} already has an assigned Canteen Owner.`);
     }
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma_1.prisma.user.findUnique({
         where: { email: payload.email },
         include: { canteenProfile: true },
     });
     if (existingUser) {
-        if (existingUser.role !== Role.CANTEEN_OWNER) {
+        if (existingUser.role !== enums_1.Role.CANTEEN_OWNER) {
             throw new Error("A user with this email already exists with a different role.");
         }
         if (existingUser.canteenProfile) {
             throw new Error("This Canteen Owner is already assigned to another hall.");
         }
-        return prisma.canteenOwnerProfile.create({
+        return prisma_1.prisma.canteenOwnerProfile.create({
             data: {
                 userId: existingUser.id,
                 hallId: payload.hallId,
@@ -88,15 +94,15 @@ const createCanteenOwner = async (payload) => {
             },
         });
     }
-    const saltRounds = Number(config.bcrypt_salt_rounds) || 12;
-    const hashedPassword = await bcrypt.hash(payload.password, saltRounds);
-    return prisma.$transaction(async (tx) => {
+    const saltRounds = Number(config_1.default.bcrypt_salt_rounds) || 12;
+    const hashedPassword = await bcryptjs_1.default.hash(payload.password, saltRounds);
+    return prisma_1.prisma.$transaction(async (tx) => {
         const user = await tx.user.create({
             data: {
                 name: payload.name,
                 email: payload.email,
                 password: hashedPassword,
-                role: Role.CANTEEN_OWNER,
+                role: enums_1.Role.CANTEEN_OWNER,
                 emailVerified: true,
             },
         });
@@ -115,7 +121,7 @@ const createCanteenOwner = async (payload) => {
     });
 };
 const updateCanteenOwnerStatus = async (canteenOwnerId, payload) => {
-    const owner = await prisma.canteenOwnerProfile.findUnique({
+    const owner = await prisma_1.prisma.canteenOwnerProfile.findUnique({
         where: { id: canteenOwnerId },
         include: {
             hall: { select: { id: true, name: true, shortName: true } },
@@ -127,14 +133,14 @@ const updateCanteenOwnerStatus = async (canteenOwnerId, payload) => {
     }
     // If removeAccount is requested, ensure no active/unconsumed future orders exist
     if (payload.removeAccount) {
-        const activeOrdersCount = await prisma.foodOrder.count({
+        const activeOrdersCount = await prisma_1.prisma.foodOrder.count({
             where: {
                 canteenId: owner.id,
                 orderStatus: {
                     in: [
-                        FoodOrderStatus.CONFIRMED,
-                        FoodOrderStatus.PREPARING,
-                        FoodOrderStatus.READY_FOR_PICKUP,
+                        enums_1.FoodOrderStatus.CONFIRMED,
+                        enums_1.FoodOrderStatus.PREPARING,
+                        enums_1.FoodOrderStatus.READY_FOR_PICKUP,
                     ],
                 },
             },
@@ -142,13 +148,13 @@ const updateCanteenOwnerStatus = async (canteenOwnerId, payload) => {
         if (activeOrdersCount > 0) {
             throw new Error(`Cannot remove Canteen Owner while ${activeOrdersCount} active meal order(s) are pending fulfillment. Suspend the account first.`);
         }
-        await prisma.$transaction(async (tx) => {
+        await prisma_1.prisma.$transaction(async (tx) => {
             await tx.canteenOwnerProfile.delete({
                 where: { id: owner.id },
             });
             await tx.user.update({
                 where: { id: owner.userId },
-                data: { status: UserStatus.DELETED },
+                data: { status: enums_1.UserStatus.DELETED },
             });
         });
         return {
@@ -159,11 +165,11 @@ const updateCanteenOwnerStatus = async (canteenOwnerId, payload) => {
         };
     }
     // Otherwise suspend or re-activate
-    return prisma.$transaction(async (tx) => {
+    return prisma_1.prisma.$transaction(async (tx) => {
         await tx.user.update({
             where: { id: owner.userId },
             data: {
-                status: payload.isActive ? UserStatus.ACTIVE : UserStatus.BLOCKED,
+                status: payload.isActive ? enums_1.UserStatus.ACTIVE : enums_1.UserStatus.BLOCKED,
             },
         });
         return tx.canteenOwnerProfile.update({
@@ -179,7 +185,7 @@ const updateCanteenOwnerStatus = async (canteenOwnerId, payload) => {
     });
 };
 const upsertMasterPriceItem = async (adminUserId, payload) => {
-    return prisma.hallMasterPriceItem.upsert({
+    return prisma_1.prisma.hallMasterPriceItem.upsert({
         where: {
             uq_hall_master_price_item: {
                 hallId: payload.hallId,
@@ -204,19 +210,19 @@ const upsertMasterPriceItem = async (adminUserId, payload) => {
     });
 };
 const getHallMasterPrices = async (hallId) => {
-    return prisma.hallMasterPriceItem.findMany({
+    return prisma_1.prisma.hallMasterPriceItem.findMany({
         where: { hallId, isActive: true },
         orderBy: [{ category: "asc" }, { itemName: "asc" }],
     });
 };
 const reviewMenuItemPrice = async (adminUserId, menuItemId, payload) => {
-    const item = await prisma.canteenMenuItem.findUnique({
+    const item = await prisma_1.prisma.canteenMenuItem.findUnique({
         where: { id: menuItemId },
     });
     if (!item) {
         throw new Error("Menu item not found.");
     }
-    return prisma.canteenMenuItem.update({
+    return prisma_1.prisma.canteenMenuItem.update({
         where: { id: menuItemId },
         data: {
             approvalStatus: payload.approvalStatus,
@@ -230,17 +236,17 @@ const reviewMenuItemPrice = async (adminUserId, menuItemId, payload) => {
 // ============================================================================
 const createMenuItem = async (userId, payload) => {
     const canteen = await verifyCanteenOwner(userId);
-    let approvalStatus = MenuApprovalStatus.APPROVED;
+    let approvalStatus = enums_1.MenuApprovalStatus.APPROVED;
     let linkedMasterPriceId = payload.masterPriceId ?? null;
     const masterCap = payload.masterPriceId
-        ? await prisma.hallMasterPriceItem.findFirst({
+        ? await prisma_1.prisma.hallMasterPriceItem.findFirst({
             where: {
                 id: payload.masterPriceId,
                 hallId: canteen.hallId,
                 isActive: true,
             },
         })
-        : await prisma.hallMasterPriceItem.findFirst({
+        : await prisma_1.prisma.hallMasterPriceItem.findFirst({
             where: {
                 hallId: canteen.hallId,
                 itemName: { equals: payload.name.trim(), mode: "insensitive" },
@@ -251,13 +257,13 @@ const createMenuItem = async (userId, payload) => {
     if (masterCap) {
         linkedMasterPriceId = masterCap.id;
         if (payload.price > masterCap.maxAllowedTk) {
-            approvalStatus = MenuApprovalStatus.PENDING_PRICE_APPROVAL;
+            approvalStatus = enums_1.MenuApprovalStatus.PENDING_PRICE_APPROVAL;
         }
     }
     else if (payload.isSpecial || payload.isCombo) {
-        approvalStatus = MenuApprovalStatus.PENDING_PRICE_APPROVAL;
+        approvalStatus = enums_1.MenuApprovalStatus.PENDING_PRICE_APPROVAL;
     }
-    return prisma.canteenMenuItem.create({
+    return prisma_1.prisma.canteenMenuItem.create({
         data: {
             name: payload.name.trim(),
             description: payload.description,
@@ -268,7 +274,7 @@ const createMenuItem = async (userId, payload) => {
             isRegular: payload.isRegular ?? true,
             isSpecial: payload.isSpecial ?? false,
             availableDate: payload.availableDate
-                ? normalizeMealDate(payload.availableDate)
+                ? (0, canteen_utils_1.normalizeMealDate)(payload.availableDate)
                 : null,
             availableSlots: payload.availableSlots,
             isCombo: payload.isCombo ?? false,
@@ -285,7 +291,7 @@ const createMenuItem = async (userId, payload) => {
 };
 const updateMenuItem = async (userId, menuItemId, payload) => {
     const canteen = await verifyCanteenOwner(userId);
-    const existing = await prisma.canteenMenuItem.findFirst({
+    const existing = await prisma_1.prisma.canteenMenuItem.findFirst({
         where: { id: menuItemId, canteenId: canteen.id },
         include: { masterPrice: true },
     });
@@ -296,16 +302,16 @@ const updateMenuItem = async (userId, menuItemId, payload) => {
     if (payload.price !== undefined && payload.price > existing.price) {
         if (!existing.masterPrice ||
             payload.price > existing.masterPrice.maxAllowedTk) {
-            nextApprovalStatus = MenuApprovalStatus.PENDING_PRICE_APPROVAL;
+            nextApprovalStatus = enums_1.MenuApprovalStatus.PENDING_PRICE_APPROVAL;
         }
     }
-    return prisma.canteenMenuItem.update({
+    return prisma_1.prisma.canteenMenuItem.update({
         where: { id: menuItemId },
         data: {
             ...payload,
             availableDate: payload.availableDate !== undefined
                 ? payload.availableDate
-                    ? normalizeMealDate(payload.availableDate)
+                    ? (0, canteen_utils_1.normalizeMealDate)(payload.availableDate)
                     : null
                 : existing.availableDate,
             approvalStatus: nextApprovalStatus,
@@ -314,7 +320,7 @@ const updateMenuItem = async (userId, menuItemId, payload) => {
 };
 const getCanteenOwnMenu = async (userId) => {
     const canteen = await verifyCanteenOwner(userId);
-    return prisma.canteenMenuItem.findMany({
+    return prisma_1.prisma.canteenMenuItem.findMany({
         where: { canteenId: canteen.id },
         include: {
             masterPrice: { select: { itemName: true, maxAllowedTk: true } },
@@ -325,19 +331,19 @@ const getCanteenOwnMenu = async (userId) => {
 };
 const getKitchenPrepSummary = async (userId, mealDateStr, mealSlot) => {
     const canteen = await verifyCanteenOwner(userId);
-    const mealDate = normalizeMealDate(mealDateStr);
-    const schedule = getSlotScheduleWindows(mealDate, mealSlot);
-    const validOrders = await prisma.foodOrder.findMany({
+    const mealDate = (0, canteen_utils_1.normalizeMealDate)(mealDateStr);
+    const schedule = (0, canteen_utils_1.getSlotScheduleWindows)(mealDate, mealSlot);
+    const validOrders = await prisma_1.prisma.foodOrder.findMany({
         where: {
             canteenId: canteen.id,
             mealDate,
             mealSlot,
             orderStatus: {
                 in: [
-                    FoodOrderStatus.CONFIRMED,
-                    FoodOrderStatus.PREPARING,
-                    FoodOrderStatus.READY_FOR_PICKUP,
-                    FoodOrderStatus.COMPLETED,
+                    enums_1.FoodOrderStatus.CONFIRMED,
+                    enums_1.FoodOrderStatus.PREPARING,
+                    enums_1.FoodOrderStatus.READY_FOR_PICKUP,
+                    enums_1.FoodOrderStatus.COMPLETED,
                 ],
             },
         },
@@ -359,13 +365,13 @@ const getKitchenPrepSummary = async (userId, mealDateStr, mealSlot) => {
     let totalCounterDue = 0;
     for (const order of validOrders) {
         totalOrders += 1;
-        if (order.tokenStatus === TokenStatus.CONSUMED) {
+        if (order.tokenStatus === enums_1.TokenStatus.CONSUMED) {
             consumedCount += 1;
         }
-        else if (order.tokenStatus === TokenStatus.ISSUED) {
+        else if (order.tokenStatus === enums_1.TokenStatus.ISSUED) {
             pendingPickupCount += 1;
         }
-        if (order.paymentStatus === FoodPaymentStatus.PAID) {
+        if (order.paymentStatus === enums_1.FoodPaymentStatus.PAID) {
             totalRevenuePaid += order.totalAmount;
         }
         else {
@@ -418,19 +424,19 @@ const getVendorSalesAndDueLedger = async (userId, fromDateStr, toDateStr) => {
     const canteen = await verifyCanteenOwner(userId);
     const dateFilter = {};
     if (fromDateStr) {
-        dateFilter.gte = normalizeMealDate(fromDateStr);
+        dateFilter.gte = (0, canteen_utils_1.normalizeMealDate)(fromDateStr);
     }
     if (toDateStr) {
-        const end = normalizeMealDate(toDateStr);
+        const end = (0, canteen_utils_1.normalizeMealDate)(toDateStr);
         end.setUTCHours(23, 59, 59, 999);
         dateFilter.lte = end;
     }
-    const orders = await prisma.foodOrder.findMany({
+    const orders = await prisma_1.prisma.foodOrder.findMany({
         where: {
             canteenId: canteen.id,
             ...(fromDateStr || toDateStr ? { mealDate: dateFilter } : {}),
             orderStatus: {
-                notIn: [FoodOrderStatus.CANCELLED, FoodOrderStatus.PENDING_PAYMENT],
+                notIn: [enums_1.FoodOrderStatus.CANCELLED, enums_1.FoodOrderStatus.PENDING_PAYMENT],
             },
         },
         include: {
@@ -442,7 +448,7 @@ const getVendorSalesAndDueLedger = async (userId, fromDateStr, toDateStr) => {
                 },
             },
             transactions: {
-                where: { status: FoodPaymentStatus.PAID },
+                where: { status: enums_1.FoodPaymentStatus.PAID },
                 select: {
                     tranId: true,
                     gateway: true,
@@ -464,11 +470,11 @@ const getVendorSalesAndDueLedger = async (userId, fromDateStr, toDateStr) => {
         }
         breakdownByMethod[order.paymentMethod].count += 1;
         breakdownByMethod[order.paymentMethod].totalTk = Number((breakdownByMethod[order.paymentMethod].totalTk + order.totalAmount).toFixed(2));
-        if (order.paymentStatus === FoodPaymentStatus.PAID) {
+        if (order.paymentStatus === enums_1.FoodPaymentStatus.PAID) {
             totalSettledSalesTk = Number((totalSettledSalesTk + order.totalAmount).toFixed(2));
         }
-        else if (order.paymentStatus === FoodPaymentStatus.UNPAID) {
-            if (order.orderStatus === FoodOrderStatus.NO_SHOW) {
+        else if (order.paymentStatus === enums_1.FoodPaymentStatus.UNPAID) {
+            if (order.orderStatus === enums_1.FoodOrderStatus.NO_SHOW) {
                 totalNoShowUnpaidTk = Number((totalNoShowUnpaidTk + order.totalAmount).toFixed(2));
             }
             else {
@@ -511,12 +517,12 @@ const getVendorSalesAndDueLedger = async (userId, fromDateStr, toDateStr) => {
 // ============================================================================
 const getStudentLiveMenu = async (userId, mealDateStr, mealSlot) => {
     const student = await verifyResidentStudent(userId);
-    const targetDate = mealDateStr ? normalizeMealDate(mealDateStr) : undefined;
-    return prisma.canteenMenuItem.findMany({
+    const targetDate = mealDateStr ? (0, canteen_utils_1.normalizeMealDate)(mealDateStr) : undefined;
+    return prisma_1.prisma.canteenMenuItem.findMany({
         where: {
             hallId: student.hallId,
             isAvailable: true,
-            approvalStatus: MenuApprovalStatus.APPROVED,
+            approvalStatus: enums_1.MenuApprovalStatus.APPROVED,
             ...(mealSlot ? { availableSlots: { has: mealSlot } } : {}),
             OR: [
                 { isRegular: true },
@@ -533,7 +539,7 @@ const getStudentLiveMenu = async (userId, mealDateStr, mealSlot) => {
 };
 const getStudentMyOrders = async (userId) => {
     const student = await verifyResidentStudent(userId);
-    return prisma.foodOrder.findMany({
+    return prisma_1.prisma.foodOrder.findMany({
         where: { studentId: student.id },
         include: {
             items: true,
@@ -545,28 +551,28 @@ const getStudentMyOrders = async (userId) => {
 };
 const createFoodOrder = async (userId, payload) => {
     const student = await verifyResidentStudent(userId);
-    const mealDate = normalizeMealDate(payload.mealDate);
+    const mealDate = (0, canteen_utils_1.normalizeMealDate)(payload.mealDate);
     // 1. Enforce strict 6-Hour Cut-off Deadline
-    const schedule = assertBeforeCutoffDeadline(mealDate, payload.mealSlot);
+    const schedule = (0, canteen_utils_1.assertBeforeCutoffDeadline)(mealDate, payload.mealSlot);
     // 2. Verify Hall has an active Canteen
-    const canteen = await prisma.canteenOwnerProfile.findUnique({
+    const canteen = await prisma_1.prisma.canteenOwnerProfile.findUnique({
         where: { hallId: student.hallId },
     });
     if (!canteen || !canteen.isActive) {
         throw new Error("No active canteen is currently operating in your hall.");
     }
     // 3. Counter Cash Due Guardrails (No-Show & Unpaid Lock)
-    if (payload.paymentMethod === FoodPaymentMethod.COUNTER_CASH) {
+    if (payload.paymentMethod === enums_1.FoodPaymentMethod.COUNTER_CASH) {
         const wallet = student.canteenWallet;
         if (wallet?.dueBlockedUntil && new Date() < wallet.dueBlockedUntil) {
             throw new Error(`Your Pay-at-Counter privilege is temporarily suspended until ${wallet.dueBlockedUntil.toDateString()} due to repeated no-shows.`);
         }
-        const unpaidOrder = await prisma.foodOrder.findFirst({
+        const unpaidOrder = await prisma_1.prisma.foodOrder.findFirst({
             where: {
                 studentId: student.id,
-                paymentStatus: FoodPaymentStatus.UNPAID,
+                paymentStatus: enums_1.FoodPaymentStatus.UNPAID,
                 orderStatus: {
-                    notIn: [FoodOrderStatus.CANCELLED, FoodOrderStatus.PENDING_PAYMENT],
+                    notIn: [enums_1.FoodOrderStatus.CANCELLED, enums_1.FoodOrderStatus.PENDING_PAYMENT],
                 },
             },
         });
@@ -586,12 +592,12 @@ const createFoodOrder = async (userId, payload) => {
     const normalizedItems = Array.from(mergedItemMap.entries()).map(([menuItemId, quantity]) => ({ menuItemId, quantity }));
     // 5. Zero-Trust Server-Side Price & Availability Resolution
     const requestedIds = normalizedItems.map((i) => i.menuItemId);
-    const dbMenuItems = await prisma.canteenMenuItem.findMany({
+    const dbMenuItems = await prisma_1.prisma.canteenMenuItem.findMany({
         where: {
             id: { in: requestedIds },
             hallId: student.hallId,
             isAvailable: true,
-            approvalStatus: MenuApprovalStatus.APPROVED,
+            approvalStatus: enums_1.MenuApprovalStatus.APPROVED,
         },
     });
     if (dbMenuItems.length !== requestedIds.length) {
@@ -626,9 +632,9 @@ const createFoodOrder = async (userId, payload) => {
         };
     });
     // 6. Generate Tamper-Proof One-Time QR & 4-Digit PIN
-    const security = generateOrderSecurityCredentials(student.id, student.hallId, mealDate, payload.mealSlot);
+    const security = (0, canteen_utils_1.generateOrderSecurityCredentials)(student.id, student.hallId, mealDate, payload.mealSlot);
     // 7. Execute Atomic Transaction (Stock Lock + 1Card Deduction + Order Creation)
-    const createdResult = await prisma.$transaction(async (tx) => {
+    const createdResult = await prisma_1.prisma.$transaction(async (tx) => {
         for (const item of preparedOrderItems) {
             if (item.hasStockCap) {
                 const menu = menuMap.get(item.menuItemId);
@@ -652,10 +658,10 @@ const createFoodOrder = async (userId, payload) => {
                 });
             }
         }
-        let paymentStatus = FoodPaymentStatus.UNPAID;
-        let orderStatus = FoodOrderStatus.PENDING_PAYMENT;
+        let paymentStatus = enums_1.FoodPaymentStatus.UNPAID;
+        let orderStatus = enums_1.FoodOrderStatus.PENDING_PAYMENT;
         let paidAt = null;
-        if (payload.paymentMethod === FoodPaymentMethod.ONECARD) {
+        if (payload.paymentMethod === enums_1.FoodPaymentMethod.ONECARD) {
             const wallet = await tx.canteenWallet.findUnique({
                 where: { studentId: student.id },
             });
@@ -666,13 +672,13 @@ const createFoodOrder = async (userId, payload) => {
                 where: { studentId: student.id },
                 data: { balance: { decrement: totalAmount } },
             });
-            paymentStatus = FoodPaymentStatus.PAID;
-            orderStatus = FoodOrderStatus.CONFIRMED;
+            paymentStatus = enums_1.FoodPaymentStatus.PAID;
+            orderStatus = enums_1.FoodOrderStatus.CONFIRMED;
             paidAt = new Date();
         }
-        else if (payload.paymentMethod === FoodPaymentMethod.COUNTER_CASH) {
-            paymentStatus = FoodPaymentStatus.UNPAID;
-            orderStatus = FoodOrderStatus.CONFIRMED;
+        else if (payload.paymentMethod === enums_1.FoodPaymentMethod.COUNTER_CASH) {
+            paymentStatus = enums_1.FoodPaymentStatus.UNPAID;
+            orderStatus = enums_1.FoodOrderStatus.CONFIRMED;
         }
         const order = await tx.foodOrder.create({
             data: {
@@ -685,7 +691,7 @@ const createFoodOrder = async (userId, payload) => {
                 paymentMethod: payload.paymentMethod,
                 paymentStatus,
                 orderStatus,
-                tokenStatus: TokenStatus.ISSUED,
+                tokenStatus: enums_1.TokenStatus.ISSUED,
                 paidAt,
                 studentId: student.id,
                 hallId: student.hallId,
@@ -707,27 +713,27 @@ const createFoodOrder = async (userId, payload) => {
         };
     });
     // 8. Send Branded Digital Meal Slip Email immediately for confirmed orders
-    if (createdResult.order.paymentMethod === FoodPaymentMethod.COUNTER_CASH ||
-        createdResult.order.paymentMethod === FoodPaymentMethod.ONECARD) {
-        void sendDigitalMealSlipEmail(createdResult.order.id);
+    if (createdResult.order.paymentMethod === enums_1.FoodPaymentMethod.COUNTER_CASH ||
+        createdResult.order.paymentMethod === enums_1.FoodPaymentMethod.ONECARD) {
+        void (0, canteen_mail_1.sendDigitalMealSlipEmail)(createdResult.order.id);
     }
     return createdResult;
 };
 const cancelFoodOrder = async (userId, orderId, reason) => {
     const student = await verifyResidentStudent(userId);
-    const order = await prisma.foodOrder.findFirst({
+    const order = await prisma_1.prisma.foodOrder.findFirst({
         where: { id: orderId, studentId: student.id },
         include: { items: true },
     });
     if (!order) {
         throw new Error("Order not found.");
     }
-    if (order.orderStatus === FoodOrderStatus.CANCELLED ||
-        order.tokenStatus === TokenStatus.CONSUMED) {
+    if (order.orderStatus === enums_1.FoodOrderStatus.CANCELLED ||
+        order.tokenStatus === enums_1.TokenStatus.CONSUMED) {
         throw new Error("This order cannot be cancelled.");
     }
-    assertBeforeCutoffDeadline(order.mealDate, order.mealSlot);
-    return prisma.$transaction(async (tx) => {
+    (0, canteen_utils_1.assertBeforeCutoffDeadline)(order.mealDate, order.mealSlot);
+    return prisma_1.prisma.$transaction(async (tx) => {
         for (const item of order.items) {
             await tx.canteenMenuItem.update({
                 where: { id: item.menuItemId },
@@ -735,7 +741,7 @@ const cancelFoodOrder = async (userId, orderId, reason) => {
             });
         }
         let refundedTo1Card = false;
-        if (order.paymentStatus === FoodPaymentStatus.PAID) {
+        if (order.paymentStatus === enums_1.FoodPaymentStatus.PAID) {
             await tx.canteenWallet.upsert({
                 where: { studentId: student.id },
                 update: { balance: { increment: order.totalAmount } },
@@ -746,10 +752,10 @@ const cancelFoodOrder = async (userId, orderId, reason) => {
         const updatedOrder = await tx.foodOrder.update({
             where: { id: order.id },
             data: {
-                orderStatus: FoodOrderStatus.CANCELLED,
-                tokenStatus: TokenStatus.CANCELLED,
+                orderStatus: enums_1.FoodOrderStatus.CANCELLED,
+                tokenStatus: enums_1.TokenStatus.CANCELLED,
                 paymentStatus: refundedTo1Card
-                    ? FoodPaymentStatus.REFUNDED
+                    ? enums_1.FoodPaymentStatus.REFUNDED
                     : order.paymentStatus,
                 cancelledAt: new Date(),
                 cancelReason: reason ?? "Cancelled by student before cut-off deadline",
@@ -764,14 +770,14 @@ const cancelFoodOrder = async (userId, orderId, reason) => {
 };
 const getDigitalMealSlip = async (userId, orderId) => {
     const student = await verifyResidentStudent(userId);
-    const order = await prisma.foodOrder.findFirst({
+    const order = await prisma_1.prisma.foodOrder.findFirst({
         where: { id: orderId, studentId: student.id },
         include: {
             items: true,
             hall: { select: { name: true, shortName: true } },
             canteen: { select: { businessName: true, contactPhone: true } },
             transactions: {
-                where: { status: FoodPaymentStatus.PAID },
+                where: { status: enums_1.FoodPaymentStatus.PAID },
                 select: {
                     tranId: true,
                     gateway: true,
@@ -784,11 +790,11 @@ const getDigitalMealSlip = async (userId, orderId) => {
     if (!order) {
         throw new Error("Digital meal slip not found.");
     }
-    if (order.paymentMethod !== FoodPaymentMethod.COUNTER_CASH &&
-        order.paymentStatus !== FoodPaymentStatus.PAID) {
+    if (order.paymentMethod !== enums_1.FoodPaymentMethod.COUNTER_CASH &&
+        order.paymentStatus !== enums_1.FoodPaymentStatus.PAID) {
         throw new Error("Digital slip is locked until payment is verified. Please complete payment first.");
     }
-    const schedule = getSlotScheduleWindows(order.mealDate, order.mealSlot);
+    const schedule = (0, canteen_utils_1.getSlotScheduleWindows)(order.mealDate, order.mealSlot);
     return {
         slipHeader: "DIU SMARTHALL — OFFICIAL VERIFIED MEAL SLIP",
         orderCode: order.orderCode,
@@ -823,7 +829,7 @@ const getDigitalMealSlip = async (userId, orderId) => {
 // ============================================================================
 const redeemFoodToken = async (canteenUserId, payload) => {
     const canteen = await verifyCanteenOwner(canteenUserId);
-    const order = await prisma.foodOrder.findFirst({
+    const order = await prisma_1.prisma.foodOrder.findFirst({
         where: payload.qrToken
             ? { qrToken: payload.qrToken }
             : { orderCode: payload.orderCode, pickupPin: payload.pickupPin },
@@ -846,40 +852,40 @@ const redeemFoodToken = async (canteenUserId, payload) => {
     }
     // 2. Cryptographic Signature Verification (if QR scanned)
     if (payload.qrToken) {
-        const isValidSig = verifyQrTokenSignature(payload.qrToken, order.studentId, order.hallId, order.mealDate, order.mealSlot);
+        const isValidSig = (0, canteen_utils_1.verifyQrTokenSignature)(payload.qrToken, order.studentId, order.hallId, order.mealDate, order.mealSlot);
         if (!isValidSig) {
             throw new Error("TAMPERED SLIP DETECTED: Cryptographic QR signature invalid!");
         }
     }
     // 3. Single-Use Replay Guard
-    if (order.tokenStatus === TokenStatus.CONSUMED) {
+    if (order.tokenStatus === enums_1.TokenStatus.CONSUMED) {
         throw new Error(`ALREADY USED! This meal slip was already redeemed at ${order.consumedAt?.toISOString()}.`);
     }
-    if (order.tokenStatus !== TokenStatus.ISSUED ||
-        order.orderStatus === FoodOrderStatus.CANCELLED) {
+    if (order.tokenStatus !== enums_1.TokenStatus.ISSUED ||
+        order.orderStatus === enums_1.FoodOrderStatus.CANCELLED) {
         throw new Error(`SLIP INACTIVE: Current token status is ${order.tokenStatus}.`);
     }
     // 4. Active Meal Slot & Date Serving Window Check
-    assertWithinServingWindow(order.mealDate, order.mealSlot);
+    (0, canteen_utils_1.assertWithinServingWindow)(order.mealDate, order.mealSlot);
     // 5. Unpaid Counter Cash Check
-    if (order.paymentStatus === FoodPaymentStatus.UNPAID &&
+    if (order.paymentStatus === enums_1.FoodPaymentStatus.UNPAID &&
         !payload.collectCashConfirmed) {
         throw new Error(`UNPAID ORDER: Collect ${order.totalAmount} BDT cash from student and confirm cash collection to release food.`);
     }
     // 6. Atomic Database Lock (Prevents Simultaneous Double-Scan Race Condition)
     const now = new Date();
-    const lockResult = await prisma.foodOrder.updateMany({
+    const lockResult = await prisma_1.prisma.foodOrder.updateMany({
         where: {
             id: order.id,
-            tokenStatus: TokenStatus.ISSUED,
+            tokenStatus: enums_1.TokenStatus.ISSUED,
         },
         data: {
-            tokenStatus: TokenStatus.CONSUMED,
-            orderStatus: FoodOrderStatus.COMPLETED,
+            tokenStatus: enums_1.TokenStatus.CONSUMED,
+            orderStatus: enums_1.FoodOrderStatus.COMPLETED,
             consumedAt: now,
-            ...(order.paymentStatus === FoodPaymentStatus.UNPAID
+            ...(order.paymentStatus === enums_1.FoodPaymentStatus.UNPAID
                 ? {
-                    paymentStatus: FoodPaymentStatus.PAID,
+                    paymentStatus: enums_1.FoodPaymentStatus.PAID,
                     paidAt: now,
                 }
                 : {}),
@@ -894,7 +900,7 @@ const redeemFoodToken = async (canteenUserId, payload) => {
         orderCode: order.orderCode,
         mealSlot: order.mealSlot,
         totalAmount: order.totalAmount,
-        paymentStatus: FoodPaymentStatus.PAID,
+        paymentStatus: enums_1.FoodPaymentStatus.PAID,
         consumedAt: now,
         studentVerification: {
             name: order.student.name,
@@ -907,18 +913,18 @@ const redeemFoodToken = async (canteenUserId, payload) => {
 };
 const updateOrderStatus = async (canteenUserId, orderId, payload) => {
     const canteen = await verifyCanteenOwner(canteenUserId);
-    const order = await prisma.foodOrder.findFirst({
+    const order = await prisma_1.prisma.foodOrder.findFirst({
         where: { id: orderId, canteenId: canteen.id },
     });
     if (!order) {
         throw new Error("Order not found in your canteen.");
     }
-    if (payload.orderStatus === FoodOrderStatus.NO_SHOW) {
-        if (order.tokenStatus === TokenStatus.CONSUMED) {
+    if (payload.orderStatus === enums_1.FoodOrderStatus.NO_SHOW) {
+        if (order.tokenStatus === enums_1.TokenStatus.CONSUMED) {
             throw new Error("Cannot mark an already consumed order as NO_SHOW.");
         }
-        return prisma.$transaction(async (tx) => {
-            if (order.paymentMethod === FoodPaymentMethod.COUNTER_CASH) {
+        return prisma_1.prisma.$transaction(async (tx) => {
+            if (order.paymentMethod === enums_1.FoodPaymentMethod.COUNTER_CASH) {
                 const wallet = await tx.canteenWallet.upsert({
                     where: { studentId: order.studentId },
                     update: { noShowCount: { increment: 1 } },
@@ -935,13 +941,13 @@ const updateOrderStatus = async (canteenUserId, orderId, payload) => {
             return tx.foodOrder.update({
                 where: { id: order.id },
                 data: {
-                    orderStatus: FoodOrderStatus.NO_SHOW,
-                    tokenStatus: TokenStatus.EXPIRED,
+                    orderStatus: enums_1.FoodOrderStatus.NO_SHOW,
+                    tokenStatus: enums_1.TokenStatus.EXPIRED,
                 },
             });
         });
     }
-    return prisma.foodOrder.update({
+    return prisma_1.prisma.foodOrder.update({
         where: { id: order.id },
         data: { orderStatus: payload.orderStatus },
     });
@@ -951,18 +957,18 @@ const updateOrderStatus = async (canteenUserId, orderId, payload) => {
 // ============================================================================
 const createMealReview = async (userId, payload) => {
     const student = await verifyResidentStudent(userId);
-    const order = await prisma.foodOrder.findFirst({
+    const order = await prisma_1.prisma.foodOrder.findFirst({
         where: {
             id: payload.orderId,
             studentId: student.id,
-            tokenStatus: TokenStatus.CONSUMED,
+            tokenStatus: enums_1.TokenStatus.CONSUMED,
             items: { some: { menuItemId: payload.menuItemId } },
         },
     });
     if (!order) {
         throw new Error("Only students who have actually picked up and consumed this meal item can submit a verified rating.");
     }
-    const review = await prisma.mealReview.create({
+    const review = await prisma_1.prisma.mealReview.create({
         data: {
             orderId: payload.orderId,
             menuItemId: payload.menuItemId,
@@ -972,7 +978,7 @@ const createMealReview = async (userId, payload) => {
         },
     });
     // SRS Section 5: Check Weighted Verified Rating Threshold (< 2.8 across >= 10 reviews)
-    const aggregate = await prisma.mealReview.aggregate({
+    const aggregate = await prisma_1.prisma.mealReview.aggregate({
         where: { menuItemId: payload.menuItemId },
         _avg: { rating: true },
         _count: { rating: true },
@@ -994,17 +1000,17 @@ const createMealReview = async (userId, payload) => {
 };
 const createFoodComplaint = async (userId, payload) => {
     const student = await verifyResidentStudent(userId);
-    const order = await prisma.foodOrder.findFirst({
+    const order = await prisma_1.prisma.foodOrder.findFirst({
         where: {
             id: payload.orderId,
             studentId: student.id,
-            tokenStatus: TokenStatus.CONSUMED,
+            tokenStatus: enums_1.TokenStatus.CONSUMED,
         },
     });
     if (!order) {
         throw new Error("You can only file a hygiene/quality complaint for a verified consumed order.");
     }
-    return prisma.foodComplaint.create({
+    return prisma_1.prisma.foodComplaint.create({
         data: {
             orderId: order.id,
             studentId: student.id,
@@ -1016,20 +1022,20 @@ const createFoodComplaint = async (userId, payload) => {
     });
 };
 const resolveFoodComplaint = async (adminUserId, complaintId, payload) => {
-    const complaint = await prisma.foodComplaint.findUnique({
+    const complaint = await prisma_1.prisma.foodComplaint.findUnique({
         where: { id: complaintId },
     });
     if (!complaint) {
         throw new Error("Food complaint not found.");
     }
-    return prisma.$transaction(async (tx) => {
-        if (payload.status === ComplaintStatus.WARNING_ISSUED) {
+    return prisma_1.prisma.$transaction(async (tx) => {
+        if (payload.status === enums_1.ComplaintStatus.WARNING_ISSUED) {
             await tx.canteenOwnerProfile.update({
                 where: { id: complaint.canteenId },
                 data: { warningCount: { increment: 1 } },
             });
         }
-        else if (payload.status === ComplaintStatus.FINED) {
+        else if (payload.status === enums_1.ComplaintStatus.FINED) {
             await tx.canteenOwnerProfile.update({
                 where: { id: complaint.canteenId },
                 data: {
@@ -1049,7 +1055,7 @@ const resolveFoodComplaint = async (adminUserId, complaintId, payload) => {
         });
     });
 };
-export const CanteenService = {
+exports.CanteenService = {
     createCanteenOwner,
     updateCanteenOwnerStatus,
     upsertMasterPriceItem,

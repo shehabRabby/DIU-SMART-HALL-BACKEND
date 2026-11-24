@@ -1,9 +1,15 @@
-import { v2 as Cloudinary } from "cloudinary";
-import config from "../config";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.cloudinary = void 0;
+const cloudinary_1 = require("cloudinary");
+const config_1 = __importDefault(require("../config"));
 //cloudinary config
-Cloudinary.config({
-    cloud_name: config.cloudinary_cloude_name,
-    api_key: config.cloudinary_api_key,
-    api_secret: config.cloudinary_api_secret
+cloudinary_1.v2.config({
+    cloud_name: config_1.default.cloudinary_cloude_name,
+    api_key: config_1.default.cloudinary_api_key,
+    api_secret: config_1.default.cloudinary_api_secret
 });
-export const cloudinary = Cloudinary;
+exports.cloudinary = cloudinary_1.v2;

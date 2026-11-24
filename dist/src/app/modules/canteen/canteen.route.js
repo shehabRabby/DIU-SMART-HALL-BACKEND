@@ -1,44 +1,47 @@
-import { Router } from "express";
-import { Role } from "../../../generated/prisma/enums";
-import { auth } from "../../middleware/checkAuth";
-import { validateRequest } from "../../middleware/validateRequest";
-import { CanteenController } from "./canteen.controller";
-import { CanteenValidation } from "./canteen.validation";
-const router = Router();
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CanteenRoutes = void 0;
+const express_1 = require("express");
+const enums_1 = require("../../../generated/prisma/enums");
+const checkAuth_1 = require("../../middleware/checkAuth");
+const validateRequest_1 = require("../../middleware/validateRequest");
+const canteen_controller_1 = require("./canteen.controller");
+const canteen_validation_1 = require("./canteen.validation");
+const router = (0, express_1.Router)();
 // ============================================================================
 // 1. ADMIN GOVERNANCE ROUTES
 // ============================================================================
-router.post("/owners", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(CanteenValidation.createCanteenOwnerZodSchema), CanteenController.createCanteenOwner);
-router.patch("/owners/:id/status", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(CanteenValidation.updateCanteenOwnerStatusZodSchema), CanteenController.updateCanteenOwnerStatus);
-router.put("/master-prices", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(CanteenValidation.upsertMasterPriceZodSchema), CanteenController.upsertMasterPriceItem);
-router.get("/master-prices/:hallId", auth(Role.SUPER_ADMIN, Role.ADMIN, Role.CANTEEN_OWNER), CanteenController.getHallMasterPrices);
-router.patch("/menu/:menuItemId/review-price", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(CanteenValidation.reviewMenuPriceZodSchema), CanteenController.reviewMenuItemPrice);
-router.patch("/complaints/:complaintId/resolve", auth(Role.SUPER_ADMIN, Role.ADMIN), validateRequest(CanteenValidation.resolveFoodComplaintZodSchema), CanteenController.resolveFoodComplaint);
+router.post("/owners", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.createCanteenOwnerZodSchema), canteen_controller_1.CanteenController.createCanteenOwner);
+router.patch("/owners/:id/status", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.updateCanteenOwnerStatusZodSchema), canteen_controller_1.CanteenController.updateCanteenOwnerStatus);
+router.put("/master-prices", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.upsertMasterPriceZodSchema), canteen_controller_1.CanteenController.upsertMasterPriceItem);
+router.get("/master-prices/:hallId", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN, enums_1.Role.CANTEEN_OWNER), canteen_controller_1.CanteenController.getHallMasterPrices);
+router.patch("/menu/:menuItemId/review-price", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.reviewMenuPriceZodSchema), canteen_controller_1.CanteenController.reviewMenuItemPrice);
+router.patch("/complaints/:complaintId/resolve", (0, checkAuth_1.auth)(enums_1.Role.SUPER_ADMIN, enums_1.Role.ADMIN), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.resolveFoodComplaintZodSchema), canteen_controller_1.CanteenController.resolveFoodComplaint);
 // ============================================================================
 // 2. CANTEEN OWNER ROUTES
 // ============================================================================
-router.post("/menu", auth(Role.CANTEEN_OWNER), validateRequest(CanteenValidation.createMenuItemZodSchema), CanteenController.createMenuItem);
-router.patch("/menu/:menuItemId", auth(Role.CANTEEN_OWNER), validateRequest(CanteenValidation.updateMenuItemZodSchema), CanteenController.updateMenuItem);
-router.get("/menu/my-canteen", auth(Role.CANTEEN_OWNER), CanteenController.getCanteenOwnMenu);
-router.get("/kitchen/prep-summary", auth(Role.CANTEEN_OWNER), CanteenController.getKitchenPrepSummary);
-router.get("/ledger", auth(Role.CANTEEN_OWNER), CanteenController.getVendorSalesAndDueLedger);
-router.post("/orders/redeem", auth(Role.CANTEEN_OWNER), validateRequest(CanteenValidation.redeemFoodTokenZodSchema), CanteenController.redeemFoodToken);
-router.patch("/orders/:orderId/status", auth(Role.CANTEEN_OWNER), validateRequest(CanteenValidation.updateOrderStatusZodSchema), CanteenController.updateOrderStatus);
+router.post("/menu", (0, checkAuth_1.auth)(enums_1.Role.CANTEEN_OWNER), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.createMenuItemZodSchema), canteen_controller_1.CanteenController.createMenuItem);
+router.patch("/menu/:menuItemId", (0, checkAuth_1.auth)(enums_1.Role.CANTEEN_OWNER), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.updateMenuItemZodSchema), canteen_controller_1.CanteenController.updateMenuItem);
+router.get("/menu/my-canteen", (0, checkAuth_1.auth)(enums_1.Role.CANTEEN_OWNER), canteen_controller_1.CanteenController.getCanteenOwnMenu);
+router.get("/kitchen/prep-summary", (0, checkAuth_1.auth)(enums_1.Role.CANTEEN_OWNER), canteen_controller_1.CanteenController.getKitchenPrepSummary);
+router.get("/ledger", (0, checkAuth_1.auth)(enums_1.Role.CANTEEN_OWNER), canteen_controller_1.CanteenController.getVendorSalesAndDueLedger);
+router.post("/orders/redeem", (0, checkAuth_1.auth)(enums_1.Role.CANTEEN_OWNER), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.redeemFoodTokenZodSchema), canteen_controller_1.CanteenController.redeemFoodToken);
+router.patch("/orders/:orderId/status", (0, checkAuth_1.auth)(enums_1.Role.CANTEEN_OWNER), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.updateOrderStatusZodSchema), canteen_controller_1.CanteenController.updateOrderStatus);
 // ============================================================================
 // 3. STUDENT ROUTES
 // ============================================================================
-router.get("/menu/live", auth(Role.STUDENT), CanteenController.getStudentLiveMenu);
-router.post("/orders", auth(Role.STUDENT), validateRequest(CanteenValidation.createFoodOrderZodSchema), CanteenController.createFoodOrder);
-router.get("/orders/my-orders", auth(Role.STUDENT), CanteenController.getStudentMyOrders);
-router.patch("/orders/:orderId/cancel", auth(Role.STUDENT), CanteenController.cancelFoodOrder);
-router.get("/orders/:orderId/slip", auth(Role.STUDENT), CanteenController.getDigitalMealSlip);
-router.post("/reviews", auth(Role.STUDENT), validateRequest(CanteenValidation.createMealReviewZodSchema), CanteenController.createMealReview);
-router.post("/complaints", auth(Role.STUDENT), validateRequest(CanteenValidation.createFoodComplaintZodSchema), CanteenController.createFoodComplaint);
+router.get("/menu/live", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), canteen_controller_1.CanteenController.getStudentLiveMenu);
+router.post("/orders", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.createFoodOrderZodSchema), canteen_controller_1.CanteenController.createFoodOrder);
+router.get("/orders/my-orders", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), canteen_controller_1.CanteenController.getStudentMyOrders);
+router.patch("/orders/:orderId/cancel", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), canteen_controller_1.CanteenController.cancelFoodOrder);
+router.get("/orders/:orderId/slip", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), canteen_controller_1.CanteenController.getDigitalMealSlip);
+router.post("/reviews", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.createMealReviewZodSchema), canteen_controller_1.CanteenController.createMealReview);
+router.post("/complaints", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), (0, validateRequest_1.validateRequest)(canteen_validation_1.CanteenValidation.createFoodComplaintZodSchema), canteen_controller_1.CanteenController.createFoodComplaint);
 // ============================================================================
 // 4. PAYMENT ROUTES (Student Initiation + Gateway Callbacks)
 // ============================================================================
-router.post("/orders/:orderId/pay", auth(Role.STUDENT), CanteenController.initiateOrderPayment);
-router.get("/payments/stripe/verify/:sessionId", auth(Role.STUDENT), CanteenController.verifyStripeSession);
+router.post("/orders/:orderId/pay", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), canteen_controller_1.CanteenController.initiateOrderPayment);
+router.get("/payments/stripe/verify/:sessionId", (0, checkAuth_1.auth)(enums_1.Role.STUDENT), canteen_controller_1.CanteenController.verifyStripeSession);
 // Public callback route invoked directly by bKash server redirect
-router.get("/payments/bkash/callback", CanteenController.bkashCallback);
-export const CanteenRoutes = router;
+router.get("/payments/bkash/callback", canteen_controller_1.CanteenController.bkashCallback);
+exports.CanteenRoutes = router;

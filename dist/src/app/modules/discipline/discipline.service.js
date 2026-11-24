@@ -1,14 +1,20 @@
-import ejs from "ejs";
-import path from "path";
-import { IncidentCategory, IncidentStatus, Role, RoomStatus, UserStatus, WarningSeverity, WarningStatus, } from "../../../generated/prisma/enums";
-import config from "../../config";
-import { prisma } from "../../lib/prisma";
-import { transporter } from "../../lib/nodemailer";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DisciplineService = void 0;
+const ejs_1 = __importDefault(require("ejs"));
+const path_1 = __importDefault(require("path"));
+const enums_1 = require("../../../generated/prisma/enums");
+const config_1 = __importDefault(require("../../config"));
+const prisma_1 = require("../../lib/prisma");
+const nodemailer_1 = require("../../lib/nodemailer");
 /**
  * Helper: Resolve Student by UUID or studentUniId
  */
 const findStudentByIdentifier = async (identifier) => {
-    const student = await prisma.student.findFirst({
+    const student = await prisma_1.prisma.student.findFirst({
         where: {
             isDeleted: false,
             OR: [{ id: identifier }, { studentUniId: identifier }],
@@ -29,23 +35,23 @@ const findStudentByIdentifier = async (identifier) => {
 const syncExpiredWarnings = async (studentId) => {
     const now = new Date();
     const whereClause = {
-        status: WarningStatus.ACTIVE,
+        status: enums_1.WarningStatus.ACTIVE,
         expiresAt: {
             not: null,
             lte: now,
         },
         ...(studentId ? { studentId } : {}),
     };
-    const expiredWarnings = await prisma.studentWarning.findMany({
+    const expiredWarnings = await prisma_1.prisma.studentWarning.findMany({
         where: whereClause,
         select: { id: true, studentId: true },
     });
     if (expiredWarnings.length === 0)
         return;
-    await prisma.$transaction(async (tx) => {
+    await prisma_1.prisma.$transaction(async (tx) => {
         await tx.studentWarning.updateMany({
             where: { id: { in: expiredWarnings.map((w) => w.id) } },
-            data: { status: WarningStatus.EXPIRED },
+            data: { status: enums_1.WarningStatus.EXPIRED },
         });
         const affectedStudentIds = [
             ...new Set(expiredWarnings.map((w) => w.studentId)),
@@ -54,7 +60,7 @@ const syncExpiredWarnings = async (studentId) => {
             const activeCount = await tx.studentWarning.count({
                 where: {
                     studentId: sId,
-                    status: WarningStatus.ACTIVE,
+                    status: enums_1.WarningStatus.ACTIVE,
                 },
             });
             await tx.student.update({
@@ -69,8 +75,8 @@ const syncExpiredWarnings = async (studentId) => {
  */
 const notifyStudentDisciplinaryAction = async (params) => {
     try {
-        const templatePath = path.join(process.cwd(), "src/app/templates/discipline-notice.ejs");
-        const html = await ejs.renderFile(templatePath, {
+        const templatePath = path_1.default.join(process.cwd(), "src/app/templates/discipline-notice.ejs");
+        const html = await ejs_1.default.renderFile(templatePath, {
             subject: params.subject,
             noticeType: params.noticeType,
             headerClass: params.headerClass || "header-default",
@@ -95,8 +101,8 @@ const notifyStudentDisciplinaryAction = async (params) => {
                 })
                 : null,
         });
-        await transporter.sendMail({
-            from: `"DIU SmartHall Administration" <${config.smtp_user}>`,
+        await nodemailer_1.transporter.sendMail({
+            from: `"DIU SmartHall Administration" <${config_1.default.smtp_user}>`,
             to: params.to,
             subject: params.subject,
             html,
@@ -116,10 +122,10 @@ const executeIssueWarning = async (adminUserId, payload, incidentId) => {
     }
     // Sync expired warnings first so strike calculation is accurate
     await syncExpiredWarnings(student.id);
-    const currentActiveWarnings = await prisma.studentWarning.count({
+    const currentActiveWarnings = await prisma_1.prisma.studentWarning.count({
         where: {
             studentId: student.id,
-            status: WarningStatus.ACTIVE,
+            status: enums_1.WarningStatus.ACTIVE,
         },
     });
     const isShowCause = Boolean(payload.issueAsShowCause && !payload.forceExpel);
@@ -129,9 +135,9 @@ const executeIssueWarning = async (adminUserId, payload, incidentId) => {
     const expiryDays = payload.expiryDays ?? 180;
     const expiresAt = new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000);
     const willExpel = !isShowCause && (nextStrikeNumber >= 3 || Boolean(payload.forceExpel));
-    const category = payload.category ?? IncidentCategory.DISCIPLINARY_BREACH;
-    const severity = payload.severity ?? WarningSeverity.MINOR;
-    const result = await prisma.$transaction(async (tx) => {
+    const category = payload.category ?? enums_1.IncidentCategory.DISCIPLINARY_BREACH;
+    const severity = payload.severity ?? enums_1.WarningSeverity.MINOR;
+    const result = await prisma_1.prisma.$transaction(async (tx) => {
         const warning = await tx.studentWarning.create({
             data: {
                 studentId: student.id,
@@ -143,7 +149,7 @@ const executeIssueWarning = async (adminUserId, payload, incidentId) => {
                 severity,
                 title: payload.title,
                 reason: payload.reason,
-                status: isShowCause ? WarningStatus.SHOW_CAUSE : WarningStatus.ACTIVE,
+                status: isShowCause ? enums_1.WarningStatus.SHOW_CAUSE : enums_1.WarningStatus.ACTIVE,
                 appealDeadline,
                 fineAmount: payload.fineAmount ?? 0,
                 expiresAt: isShowCause ? null : expiresAt,
@@ -187,11 +193,11 @@ const executeIssueWarning = async (adminUserId, payload, incidentId) => {
                             where: { id: room.id },
                             data: {
                                 occupiedCount: updatedOccupied,
-                                status: room.status === RoomStatus.MAINTENANCE
-                                    ? RoomStatus.MAINTENANCE
+                                status: room.status === enums_1.RoomStatus.MAINTENANCE
+                                    ? enums_1.RoomStatus.MAINTENANCE
                                     : updatedOccupied < room.capacity
-                                        ? RoomStatus.AVAILABLE
-                                        : RoomStatus.FULL,
+                                        ? enums_1.RoomStatus.AVAILABLE
+                                        : enums_1.RoomStatus.FULL,
                             },
                         });
                     }
@@ -278,15 +284,15 @@ const executeIssueWarning = async (adminUserId, payload, incidentId) => {
 // ============================================================================
 const createIncidentReport = async (reporterUserId, payload) => {
     // 1. Verify reporter is an active user
-    const reporterUser = await prisma.user.findUnique({
+    const reporterUser = await prisma_1.prisma.user.findUnique({
         where: { id: reporterUserId },
         include: { student: true },
     });
-    if (!reporterUser || reporterUser.status !== UserStatus.ACTIVE) {
+    if (!reporterUser || reporterUser.status !== enums_1.UserStatus.ACTIVE) {
         throw new Error("Reporter account is invalid or inactive.");
     }
     // 2. If reporter is a student, ensure they are a current hall resident
-    if (reporterUser.role === Role.STUDENT) {
+    if (reporterUser.role === enums_1.Role.STUDENT) {
         if (!reporterUser.student ||
             reporterUser.student.isDeleted ||
             !reporterUser.student.isResident) {
@@ -302,7 +308,7 @@ const createIncidentReport = async (reporterUserId, payload) => {
     if (accusedStudent.userId === reporterUserId) {
         throw new Error("You cannot file an incident report against yourself.");
     }
-    const incident = await prisma.incidentReport.create({
+    const incident = await prisma_1.prisma.incidentReport.create({
         data: {
             reportedById: reporterUserId,
             accusedStudentId: accusedStudent.id,
@@ -310,9 +316,9 @@ const createIncidentReport = async (reporterUserId, payload) => {
             roomId: accusedStudent.roomId,
             title: payload.title,
             description: payload.description,
-            category: payload.category ?? IncidentCategory.OTHER,
-            severity: payload.severity ?? WarningSeverity.MINOR,
-            status: IncidentStatus.OPEN,
+            category: payload.category ?? enums_1.IncidentCategory.OTHER,
+            severity: payload.severity ?? enums_1.WarningSeverity.MINOR,
+            status: enums_1.IncidentStatus.OPEN,
         },
         include: {
             accusedStudent: {
@@ -355,7 +361,7 @@ const getAllIncidents = async (filters) => {
             },
         ];
     }
-    return prisma.incidentReport.findMany({
+    return prisma_1.prisma.incidentReport.findMany({
         where,
         orderBy: { createdAt: "desc" },
         include: {
@@ -378,23 +384,23 @@ const getAllIncidents = async (filters) => {
     });
 };
 const resolveOrEscalateIncident = async (incidentId, adminUserId, payload) => {
-    const incident = await prisma.incidentReport.findUnique({
+    const incident = await prisma_1.prisma.incidentReport.findUnique({
         where: { id: incidentId },
         include: { accusedStudent: true },
     });
     if (!incident) {
         throw new Error("Incident report not found.");
     }
-    if (incident.status === IncidentStatus.RESOLVED ||
-        incident.status === IncidentStatus.ESCALATED ||
-        incident.status === IncidentStatus.DISMISSED) {
+    if (incident.status === enums_1.IncidentStatus.RESOLVED ||
+        incident.status === enums_1.IncidentStatus.ESCALATED ||
+        incident.status === enums_1.IncidentStatus.DISMISSED) {
         throw new Error(`This incident is already closed with status: ${incident.status}.`);
     }
     if (payload.action === "ESCALATED") {
-        const updatedIncident = await prisma.incidentReport.update({
+        const updatedIncident = await prisma_1.prisma.incidentReport.update({
             where: { id: incidentId },
             data: {
-                status: IncidentStatus.ESCALATED,
+                status: enums_1.IncidentStatus.ESCALATED,
                 mediationNotes: payload.mediationNotes,
                 resolvedById: adminUserId,
                 resolvedAt: new Date(),
@@ -417,7 +423,7 @@ const resolveOrEscalateIncident = async (incidentId, adminUserId, payload) => {
         };
     }
     const isClosing = payload.action === "RESOLVED" || payload.action === "DISMISSED";
-    const updatedIncident = await prisma.incidentReport.update({
+    const updatedIncident = await prisma_1.prisma.incidentReport.update({
         where: { id: incidentId },
         data: {
             status: payload.action,
@@ -469,7 +475,7 @@ const getAllWarnings = async (filters) => {
             },
         ];
     }
-    return prisma.studentWarning.findMany({
+    return prisma_1.prisma.studentWarning.findMany({
         where,
         orderBy: { createdAt: "desc" },
         include: {
@@ -490,14 +496,14 @@ const getAllWarnings = async (filters) => {
     });
 };
 const getMyWarnings = async (userId) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
     });
     if (!student || student.isDeleted) {
         throw new Error("Student profile not found.");
     }
     await syncExpiredWarnings(student.id);
-    const warnings = await prisma.studentWarning.findMany({
+    const warnings = await prisma_1.prisma.studentWarning.findMany({
         where: { studentId: student.id },
         orderBy: { createdAt: "desc" },
         select: {
@@ -524,27 +530,27 @@ const getMyWarnings = async (userId) => {
         },
     });
     return {
-        warningCount: warnings.filter((w) => w.status === WarningStatus.ACTIVE)
+        warningCount: warnings.filter((w) => w.status === enums_1.WarningStatus.ACTIVE)
             .length,
         isExpelled: student.isExpelled,
         warnings,
     };
 };
 const submitAppeal = async (userId, warningId, payload) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
     });
     if (!student || student.isDeleted) {
         throw new Error("Student profile not found.");
     }
-    const warning = await prisma.studentWarning.findUnique({
+    const warning = await prisma_1.prisma.studentWarning.findUnique({
         where: { id: warningId },
     });
     if (!warning || warning.studentId !== student.id) {
         throw new Error("Disciplinary notice not found.");
     }
-    if (warning.status !== WarningStatus.SHOW_CAUSE &&
-        warning.status !== WarningStatus.ACTIVE) {
+    if (warning.status !== enums_1.WarningStatus.SHOW_CAUSE &&
+        warning.status !== enums_1.WarningStatus.ACTIVE) {
         throw new Error(`Cannot submit an appeal for a notice with status: ${warning.status}.`);
     }
     if (warning.appealedAt) {
@@ -553,7 +559,7 @@ const submitAppeal = async (userId, warningId, payload) => {
     if (warning.appealDeadline && new Date() > warning.appealDeadline) {
         throw new Error("The appeal deadline for this notice has expired.");
     }
-    return prisma.studentWarning.update({
+    return prisma_1.prisma.studentWarning.update({
         where: { id: warningId },
         data: {
             appealText: payload.appealText,
@@ -562,7 +568,7 @@ const submitAppeal = async (userId, warningId, payload) => {
     });
 };
 const reviewAppeal = async (warningId, adminUserId, payload) => {
-    const warning = await prisma.studentWarning.findUnique({
+    const warning = await prisma_1.prisma.studentWarning.findUnique({
         where: { id: warningId },
         include: {
             student: {
@@ -573,17 +579,17 @@ const reviewAppeal = async (warningId, adminUserId, payload) => {
     if (!warning) {
         throw new Error("Disciplinary notice not found.");
     }
-    if (warning.status !== WarningStatus.SHOW_CAUSE &&
-        warning.status !== WarningStatus.ACTIVE) {
+    if (warning.status !== enums_1.WarningStatus.SHOW_CAUSE &&
+        warning.status !== enums_1.WarningStatus.ACTIVE) {
         throw new Error(`Notice is already finalized with status: ${warning.status}.`);
     }
     // Case A: Appeal Accepted -> Revoke Notice & Recalculate Active Strikes
     if (payload.decision === "REVOKE") {
-        const updated = await prisma.$transaction(async (tx) => {
+        const updated = await prisma_1.prisma.$transaction(async (tx) => {
             const revokedWarning = await tx.studentWarning.update({
                 where: { id: warningId },
                 data: {
-                    status: WarningStatus.REVOKED,
+                    status: enums_1.WarningStatus.REVOKED,
                     revokeReason: payload.reviewNote,
                     reviewNote: payload.reviewNote,
                     revokedAt: new Date(),
@@ -593,7 +599,7 @@ const reviewAppeal = async (warningId, adminUserId, payload) => {
             const remainingActive = await tx.studentWarning.count({
                 where: {
                     studentId: warning.studentId,
-                    status: WarningStatus.ACTIVE,
+                    status: enums_1.WarningStatus.ACTIVE,
                 },
             });
             await tx.student.update({
@@ -616,22 +622,22 @@ const reviewAppeal = async (warningId, adminUserId, payload) => {
         return updated;
     }
     // Case B: Appeal Rejected / Upheld
-    if (warning.status === WarningStatus.SHOW_CAUSE) {
+    if (warning.status === enums_1.WarningStatus.SHOW_CAUSE) {
         await syncExpiredWarnings(warning.studentId);
-        const currentActive = await prisma.studentWarning.count({
+        const currentActive = await prisma_1.prisma.studentWarning.count({
             where: {
                 studentId: warning.studentId,
-                status: WarningStatus.ACTIVE,
+                status: enums_1.WarningStatus.ACTIVE,
             },
         });
         const newStrike = Math.min(currentActive + 1, 3);
         const expiresAt = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000);
         const willExpel = newStrike >= 3;
-        const confirmed = await prisma.$transaction(async (tx) => {
+        const confirmed = await prisma_1.prisma.$transaction(async (tx) => {
             const confirmedWarning = await tx.studentWarning.update({
                 where: { id: warningId },
                 data: {
-                    status: WarningStatus.ACTIVE,
+                    status: enums_1.WarningStatus.ACTIVE,
                     strikeNumber: newStrike,
                     reviewNote: payload.reviewNote,
                     expiresAt,
@@ -662,11 +668,11 @@ const reviewAppeal = async (warningId, adminUserId, payload) => {
                         where: { id: room.id },
                         data: {
                             occupiedCount: updatedOccupied,
-                            status: room.status === RoomStatus.MAINTENANCE
-                                ? RoomStatus.MAINTENANCE
+                            status: room.status === enums_1.RoomStatus.MAINTENANCE
+                                ? enums_1.RoomStatus.MAINTENANCE
                                 : updatedOccupied < room.capacity
-                                    ? RoomStatus.AVAILABLE
-                                    : RoomStatus.FULL,
+                                    ? enums_1.RoomStatus.AVAILABLE
+                                    : enums_1.RoomStatus.FULL,
                         },
                     });
                 }
@@ -695,7 +701,7 @@ const reviewAppeal = async (warningId, adminUserId, payload) => {
         });
         return confirmed;
     }
-    return prisma.studentWarning.update({
+    return prisma_1.prisma.studentWarning.update({
         where: { id: warningId },
         data: { reviewNote: payload.reviewNote },
     });
@@ -704,7 +710,7 @@ const reviewAppeal = async (warningId, adminUserId, payload) => {
 // 3. FINE PAYMENT, DIGITAL CLEARANCE, REVOCATION & ANALYTICS
 // ============================================================================
 const markFinePaid = async (warningId) => {
-    const warning = await prisma.studentWarning.findUnique({
+    const warning = await prisma_1.prisma.studentWarning.findUnique({
         where: { id: warningId },
     });
     if (!warning) {
@@ -716,7 +722,7 @@ const markFinePaid = async (warningId) => {
     if (warning.isFinePaid) {
         throw new Error("This fine is already marked paid.");
     }
-    return prisma.studentWarning.update({
+    return prisma_1.prisma.studentWarning.update({
         where: { id: warningId },
         data: {
             isFinePaid: true,
@@ -725,7 +731,7 @@ const markFinePaid = async (warningId) => {
     });
 };
 const getMyConductClearance = async (userId) => {
-    const student = await prisma.student.findUnique({
+    const student = await prisma_1.prisma.student.findUnique({
         where: { userId },
         include: {
             hall: { select: { name: true, shortName: true } },
@@ -736,12 +742,12 @@ const getMyConductClearance = async (userId) => {
         throw new Error("Student profile not found.");
     }
     await syncExpiredWarnings(student.id);
-    const warnings = await prisma.studentWarning.findMany({
+    const warnings = await prisma_1.prisma.studentWarning.findMany({
         where: { studentId: student.id },
     });
-    const activeWarnings = warnings.filter((w) => w.status === WarningStatus.ACTIVE);
-    const pendingShowCause = warnings.filter((w) => w.status === WarningStatus.SHOW_CAUSE);
-    const unpaidFines = warnings.filter((w) => w.fineAmount > 0 && !w.isFinePaid && w.status !== WarningStatus.REVOKED);
+    const activeWarnings = warnings.filter((w) => w.status === enums_1.WarningStatus.ACTIVE);
+    const pendingShowCause = warnings.filter((w) => w.status === enums_1.WarningStatus.SHOW_CAUSE);
+    const unpaidFines = warnings.filter((w) => w.fineAmount > 0 && !w.isFinePaid && w.status !== enums_1.WarningStatus.REVOKED);
     const totalUnpaidFineAmount = unpaidFines.reduce((sum, w) => sum + w.fineAmount, 0);
     let clearanceStatus = "CLEARED";
     if (student.isExpelled ||
@@ -770,14 +776,14 @@ const revokeExpulsion = async (studentId, payload) => {
     if (!student.isExpelled) {
         throw new Error("This student is not currently expelled.");
     }
-    return prisma.$transaction(async (tx) => {
+    return prisma_1.prisma.$transaction(async (tx) => {
         await tx.studentWarning.updateMany({
             where: {
                 studentId: student.id,
-                status: { in: [WarningStatus.ACTIVE, WarningStatus.SHOW_CAUSE] },
+                status: { in: [enums_1.WarningStatus.ACTIVE, enums_1.WarningStatus.SHOW_CAUSE] },
             },
             data: {
-                status: WarningStatus.REVOKED,
+                status: enums_1.WarningStatus.REVOKED,
                 revokeReason: `Expulsion Revoked (Clemency): ${payload.revokeReason}`,
                 revokedAt: new Date(),
             },
@@ -804,23 +810,23 @@ const getDisciplineAnalytics = async (hallId) => {
     await syncExpiredWarnings();
     const hallFilter = hallId ? { hallId } : {};
     const [totalIncidents, openIncidents, activeWarnings, showCauseNotices, expelledStudentsCount, atRiskStudents, fineStats,] = await Promise.all([
-        prisma.incidentReport.count({ where: hallFilter }),
-        prisma.incidentReport.count({
+        prisma_1.prisma.incidentReport.count({ where: hallFilter }),
+        prisma_1.prisma.incidentReport.count({
             where: {
                 ...hallFilter,
-                status: { in: [IncidentStatus.OPEN, IncidentStatus.MEDIATING] },
+                status: { in: [enums_1.IncidentStatus.OPEN, enums_1.IncidentStatus.MEDIATING] },
             },
         }),
-        prisma.studentWarning.count({
-            where: { ...hallFilter, status: WarningStatus.ACTIVE },
+        prisma_1.prisma.studentWarning.count({
+            where: { ...hallFilter, status: enums_1.WarningStatus.ACTIVE },
         }),
-        prisma.studentWarning.count({
-            where: { ...hallFilter, status: WarningStatus.SHOW_CAUSE },
+        prisma_1.prisma.studentWarning.count({
+            where: { ...hallFilter, status: enums_1.WarningStatus.SHOW_CAUSE },
         }),
-        prisma.student.count({
+        prisma_1.prisma.student.count({
             where: { isExpelled: true, isDeleted: false },
         }),
-        prisma.student.findMany({
+        prisma_1.prisma.student.findMany({
             where: {
                 ...hallFilter,
                 warningCount: 2,
@@ -838,11 +844,11 @@ const getDisciplineAnalytics = async (hallId) => {
                 room: { select: { roomNumber: true, floor: true } },
             },
         }),
-        prisma.studentWarning.findMany({
+        prisma_1.prisma.studentWarning.findMany({
             where: {
                 ...hallFilter,
                 fineAmount: { gt: 0 },
-                status: { not: WarningStatus.REVOKED },
+                status: { not: enums_1.WarningStatus.REVOKED },
             },
             select: { fineAmount: true, isFinePaid: true },
         }),
@@ -867,7 +873,7 @@ const getDisciplineAnalytics = async (hallId) => {
         atRiskStudents,
     };
 };
-export const DisciplineService = {
+exports.DisciplineService = {
     createIncidentReport,
     getAllIncidents,
     resolveOrEscalateIncident,

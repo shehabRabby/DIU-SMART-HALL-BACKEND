@@ -1,70 +1,73 @@
-import { catchAsync } from "../../utils/catchAsync";
-import { sendResponse } from "../../utils/sendResponse";
-import { GatePassService } from "./gatePass.service";
-const createGatePassRequest = catchAsync(async (req, res) => {
-    const result = await GatePassService.createGatePassRequest(req.user.userId, req.body);
-    sendResponse(res, {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.GatePassController = void 0;
+const catchAsync_1 = require("../../utils/catchAsync");
+const sendResponse_1 = require("../../utils/sendResponse");
+const gatePass_service_1 = require("./gatePass.service");
+const createGatePassRequest = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const result = await gatePass_service_1.GatePassService.createGatePassRequest(req.user.userId, req.body);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 201,
         success: true,
         message: "Gate pass request submitted successfully.",
         data: result,
     });
 });
-const getMyGatePasses = catchAsync(async (req, res) => {
-    const result = await GatePassService.getMyGatePasses(req.user.userId);
-    sendResponse(res, {
+const getMyGatePasses = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const result = await gatePass_service_1.GatePassService.getMyGatePasses(req.user.userId);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: "Your gate passes retrieved successfully.",
         data: result,
     });
 });
-const cancelMyGatePass = catchAsync(async (req, res) => {
-    const result = await GatePassService.cancelMyGatePass(req.user.userId, req.params.passId);
-    sendResponse(res, {
+const cancelMyGatePass = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const result = await gatePass_service_1.GatePassService.cancelMyGatePass(req.user.userId, req.params.passId);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: "Gate pass request cancelled successfully.",
         data: result,
     });
 });
-const getAllGatePassesForAdmin = catchAsync(async (req, res) => {
-    const result = await GatePassService.getAllGatePassesForAdmin(req.query);
-    sendResponse(res, {
+const getAllGatePassesForAdmin = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const result = await gatePass_service_1.GatePassService.getAllGatePassesForAdmin(req.query);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: "All gate passes retrieved successfully.",
         data: result,
     });
 });
-const reviewGatePass = catchAsync(async (req, res) => {
-    const result = await GatePassService.reviewGatePass(req.user.userId, req.params.passId, req.body);
-    sendResponse(res, {
+const reviewGatePass = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const result = await gatePass_service_1.GatePassService.reviewGatePass(req.user.userId, req.params.passId, req.body);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: `Gate pass ${req.body.status.toLowerCase()} successfully.`,
         data: result,
     });
 });
-const verifyGatePassQr = catchAsync(async (req, res) => {
-    const result = await GatePassService.verifyGatePassQr(req.params.identifier);
-    sendResponse(res, {
+const verifyGatePassQr = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const result = await gatePass_service_1.GatePassService.verifyGatePassQr(req.params.identifier);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: result.message,
         data: result,
     });
 });
-const updateGateLog = catchAsync(async (req, res) => {
-    const result = await GatePassService.updateGateLog(req.params.passId, req.body);
-    sendResponse(res, {
+const updateGateLog = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const result = await gatePass_service_1.GatePassService.updateGateLog(req.params.passId, req.body);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: `Gate pass marked as ${req.body.action}.`,
         data: result,
     });
 });
-export const GatePassController = {
+exports.GatePassController = {
     createGatePassRequest,
     getMyGatePasses,
     cancelMyGatePass,

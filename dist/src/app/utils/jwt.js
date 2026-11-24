@@ -1,13 +1,19 @@
-import jwt from "jsonwebtoken";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.jwtUtils = void 0;
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const createToken = (payload, secret, expiresIn) => {
-    const token = jwt.sign(payload, secret, {
+    const token = jsonwebtoken_1.default.sign(payload, secret, {
         expiresIn,
     });
     return token;
 };
 const verifyToken = (token, secret) => {
     try {
-        const verifiedToken = jwt.verify(token, secret);
+        const verifiedToken = jsonwebtoken_1.default.verify(token, secret);
         return {
             success: true,
             data: verifiedToken,
@@ -21,7 +27,7 @@ const verifyToken = (token, secret) => {
         };
     }
 };
-export const jwtUtils = {
+exports.jwtUtils = {
     createToken,
     verifyToken,
 };

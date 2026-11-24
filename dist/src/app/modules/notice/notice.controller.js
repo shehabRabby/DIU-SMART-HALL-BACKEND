@@ -1,12 +1,15 @@
-import { uploadBufferToCloudinary } from "../../middleware/upload";
-import { catchAsync } from "../../utils/catchAsync";
-import { sendResponse } from "../../utils/sendResponse";
-import { NoticeService } from "./notice.service";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NoticeController = void 0;
+const upload_1 = require("../../middleware/upload");
+const catchAsync_1 = require("../../utils/catchAsync");
+const sendResponse_1 = require("../../utils/sendResponse");
+const notice_service_1 = require("./notice.service");
 const processUploadedFiles = async (files) => {
     if (!files || files.length === 0)
         return [];
     const uploadPromises = files.map(async (file) => {
-        const uploaded = await uploadBufferToCloudinary(file, "diu-smarthall/notices");
+        const uploaded = await (0, upload_1.uploadBufferToCloudinary)(file, "diu-smarthall/notices");
         return {
             url: uploaded.url,
             type: uploaded.attachmentType,
@@ -15,7 +18,7 @@ const processUploadedFiles = async (files) => {
     });
     return Promise.all(uploadPromises);
 };
-const createNotice = catchAsync(async (req, res) => {
+const createNotice = (0, catchAsync_1.catchAsync)(async (req, res) => {
     const payload = { ...req.body };
     const files = req.files;
     if (files && files.length > 0) {
@@ -25,33 +28,33 @@ const createNotice = catchAsync(async (req, res) => {
             ...uploadedAttachments,
         ];
     }
-    const result = await NoticeService.createNotice(req.user.userId, payload);
-    sendResponse(res, {
+    const result = await notice_service_1.NoticeService.createNotice(req.user.userId, payload);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 201,
         success: true,
         message: "Notice published successfully.",
         data: result,
     });
 });
-const getStudentNotices = catchAsync(async (req, res) => {
-    const result = await NoticeService.getStudentNotices(req.query);
-    sendResponse(res, {
+const getStudentNotices = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const result = await notice_service_1.NoticeService.getStudentNotices(req.query);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: "Active notices retrieved successfully.",
         data: result,
     });
 });
-const getAllNoticesForAdmin = catchAsync(async (req, res) => {
-    const result = await NoticeService.getAllNoticesForAdmin(req.query);
-    sendResponse(res, {
+const getAllNoticesForAdmin = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const result = await notice_service_1.NoticeService.getAllNoticesForAdmin(req.query);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: "All notices retrieved successfully.",
         data: result,
     });
 });
-const updateNotice = catchAsync(async (req, res) => {
+const updateNotice = (0, catchAsync_1.catchAsync)(async (req, res) => {
     const payload = { ...req.body };
     const files = req.files;
     if (files && files.length > 0) {
@@ -61,33 +64,33 @@ const updateNotice = catchAsync(async (req, res) => {
             ...uploadedAttachments,
         ];
     }
-    const result = await NoticeService.updateNotice(req.params.noticeId, payload);
-    sendResponse(res, {
+    const result = await notice_service_1.NoticeService.updateNotice(req.params.noticeId, payload);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: "Notice updated successfully.",
         data: result,
     });
 });
-const deleteNotice = catchAsync(async (req, res) => {
-    const result = await NoticeService.deleteNotice(req.params.noticeId);
-    sendResponse(res, {
+const deleteNotice = (0, catchAsync_1.catchAsync)(async (req, res) => {
+    const result = await notice_service_1.NoticeService.deleteNotice(req.params.noticeId);
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: "Notice deleted successfully.",
         data: result,
     });
 });
-const purgeExpiredNotices = catchAsync(async (_req, res) => {
-    const result = await NoticeService.purgeExpiredNotices();
-    sendResponse(res, {
+const purgeExpiredNotices = (0, catchAsync_1.catchAsync)(async (_req, res) => {
+    const result = await notice_service_1.NoticeService.purgeExpiredNotices();
+    (0, sendResponse_1.sendResponse)(res, {
         statusCode: 200,
         success: true,
         message: "Expired notices purged successfully.",
         data: result,
     });
 });
-export const NoticeController = {
+exports.NoticeController = {
     createNotice,
     getStudentNotices,
     getAllNoticesForAdmin,

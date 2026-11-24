@@ -1,30 +1,36 @@
-import ejs from "ejs";
-import path from "path";
-import { FoodPaymentMethod, FoodPaymentStatus, } from "../../../generated/prisma/enums";
-import config from "../../config";
-import { transporter } from "../../lib/nodemailer";
-import { prisma } from "../../lib/prisma";
-import { getSlotScheduleWindows } from "./canteen.utils";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.sendDigitalMealSlipEmail = void 0;
+const ejs_1 = __importDefault(require("ejs"));
+const path_1 = __importDefault(require("path"));
+const enums_1 = require("../../../generated/prisma/enums");
+const config_1 = __importDefault(require("../../config"));
+const nodemailer_1 = require("../../lib/nodemailer");
+const prisma_1 = require("../../lib/prisma");
+const canteen_utils_1 = require("./canteen.utils");
 const getPaymentThemeMeta = (method) => {
     switch (method) {
-        case FoodPaymentMethod.BKASH:
+        case enums_1.FoodPaymentMethod.BKASH:
             return { themeKey: "BKASH", gatewayLabel: "bKash Payment" };
-        case FoodPaymentMethod.STRIPE:
+        case enums_1.FoodPaymentMethod.STRIPE:
             return { themeKey: "STRIPE", gatewayLabel: "Stripe Card Payment" };
-        case FoodPaymentMethod.ONECARD:
+        case enums_1.FoodPaymentMethod.ONECARD:
             return { themeKey: "ONECARD", gatewayLabel: "DIU 1Card Wallet" };
-        case FoodPaymentMethod.COUNTER_CASH:
+        case enums_1.FoodPaymentMethod.COUNTER_CASH:
         default:
             return { themeKey: "COUNTER_CASH", gatewayLabel: "Pay at Counter" };
     }
 };
-export const sendDigitalMealSlipEmail = async (orderId) => {
+const sendDigitalMealSlipEmail = async (orderId) => {
     try {
-        if (!config.smtp_user || !config.smtp_password) {
+        if (!config_1.default.smtp_user || !config_1.default.smtp_password) {
             console.warn("SMTP credentials missing in config; skipping meal slip email.");
             return;
         }
-        const order = await prisma.foodOrder.findUnique({
+        const order = await prisma_1.prisma.foodOrder.findUnique({
             where: { id: orderId },
             include: {
                 items: true,
@@ -37,7 +43,7 @@ export const sendDigitalMealSlipEmail = async (orderId) => {
                     },
                 },
                 transactions: {
-                    where: { status: FoodPaymentStatus.PAID },
+                    where: { status: enums_1.FoodPaymentStatus.PAID },
                     orderBy: { verifiedAt: "desc" },
                     take: 1,
                 },
@@ -45,13 +51,13 @@ export const sendDigitalMealSlipEmail = async (orderId) => {
         });
         if (!order || !order.student.user.email)
             return;
-        const schedule = getSlotScheduleWindows(order.mealDate, order.mealSlot);
+        const schedule = (0, canteen_utils_1.getSlotScheduleWindows)(order.mealDate, order.mealSlot);
         const mealDateFormatted = order.mealDate.toISOString().split("T")[0];
         const { themeKey, gatewayLabel } = getPaymentThemeMeta(order.paymentMethod);
         const subject = `[DIU SmartHall] Verified Meal Slip • ${order.orderCode} (${order.mealSlot})`;
         const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(order.qrToken)}`;
-        const templatePath = path.join(process.cwd(), "src", "app", "templates", "meal-slip.ejs");
-        const html = await ejs.renderFile(templatePath, {
+        const templatePath = path_1.default.join(process.cwd(), "src", "app", "templates", "meal-slip.ejs");
+        const html = await ejs_1.default.renderFile(templatePath, {
             subject,
             themeKey,
             gatewayLabel,
@@ -72,8 +78,8 @@ export const sendDigitalMealSlipEmail = async (orderId) => {
             items: order.items,
             totalAmount: order.totalAmount,
         });
-        await transporter.sendMail({
-            from: `"DIU SmartHall Canteen" <${config.smtp_user}>`,
+        await nodemailer_1.transporter.sendMail({
+            from: `"DIU SmartHall Canteen" <${config_1.default.smtp_user}>`,
             to: order.student.user.email,
             subject,
             html,
@@ -84,3 +90,4 @@ export const sendDigitalMealSlipEmail = async (orderId) => {
         console.error("Failed to send Digital Meal Slip email:", err);
     }
 };
+exports.sendDigitalMealSlipEmail = sendDigitalMealSlipEmail;

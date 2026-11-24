@@ -1,5 +1,8 @@
-import { RoomStatus } from "../../../generated/prisma/enums";
-import { prisma } from "../../lib/prisma";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HallServices = void 0;
+const enums_1 = require("../../../generated/prisma/enums");
+const prisma_1 = require("../../lib/prisma");
 const formatRoomNumber = (floor, roomIndex) => {
     if (floor === 0) {
         return `0${roomIndex}`;
@@ -7,7 +10,7 @@ const formatRoomNumber = (floor, roomIndex) => {
     return `${floor}${String(roomIndex).padStart(2, "0")}`;
 };
 const createHall = async (payload) => {
-    const existingHall = await prisma.hall.findFirst({
+    const existingHall = await prisma_1.prisma.hall.findFirst({
         where: {
             OR: [{ name: payload.name }, { shortName: payload.shortName }],
         },
@@ -15,7 +18,7 @@ const createHall = async (payload) => {
     if (existingHall) {
         throw new Error("A hall with this name or short name already exists.");
     }
-    const hall = await prisma.hall.create({
+    const hall = await prisma_1.prisma.hall.create({
         data: {
             name: payload.name,
             shortName: payload.shortName.toUpperCase(),
@@ -36,7 +39,7 @@ const getAllHalls = async (query) => {
     if (typeof query.isActive === "boolean") {
         whereClause.isActive = query.isActive;
     }
-    const halls = await prisma.hall.findMany({
+    const halls = await prisma_1.prisma.hall.findMany({
         where: whereClause,
         orderBy: { createdAt: "asc" },
         include: {
@@ -67,7 +70,7 @@ const getAllHalls = async (query) => {
     });
 };
 const getSingleHall = async (hallId) => {
-    const hall = await prisma.hall.findUnique({
+    const hall = await prisma_1.prisma.hall.findUnique({
         where: { id: hallId },
         include: {
             rooms: {
@@ -81,7 +84,7 @@ const getSingleHall = async (hallId) => {
     return hall;
 };
 const updateHall = async (hallId, payload) => {
-    const existingHall = await prisma.hall.findUnique({
+    const existingHall = await prisma_1.prisma.hall.findUnique({
         where: { id: hallId },
     });
     if (!existingHall) {
@@ -91,14 +94,14 @@ const updateHall = async (hallId, payload) => {
     if (payload.shortName) {
         updateData.shortName = payload.shortName.toUpperCase();
     }
-    const updatedHall = await prisma.hall.update({
+    const updatedHall = await prisma_1.prisma.hall.update({
         where: { id: hallId },
         data: updateData,
     });
     return updatedHall;
 };
 const createSingleRoom = async (payload) => {
-    const hall = await prisma.hall.findUnique({
+    const hall = await prisma_1.prisma.hall.findUnique({
         where: { id: payload.hallId },
     });
     if (!hall) {
@@ -133,7 +136,7 @@ const createSingleRoom = async (payload) => {
             throw new Error(`Room number '${trimmedRoomNumber}' is out of range for floor ${payload.floor}. Valid range: ${minRoom} to ${maxRoom}.`);
         }
     }
-    const existingRoom = await prisma.room.findUnique({
+    const existingRoom = await prisma_1.prisma.room.findUnique({
         where: {
             uq_hall_roomNumber: {
                 hallId: payload.hallId,
@@ -144,7 +147,7 @@ const createSingleRoom = async (payload) => {
     if (existingRoom) {
         throw new Error(`Room ${trimmedRoomNumber} already exists in ${hall.shortName}.`);
     }
-    const room = await prisma.room.create({
+    const room = await prisma_1.prisma.room.create({
         data: {
             hallId: payload.hallId,
             roomNumber: trimmedRoomNumber,
@@ -155,7 +158,7 @@ const createSingleRoom = async (payload) => {
     return room;
 };
 const bulkGenerateRooms = async (payload) => {
-    const hall = await prisma.hall.findUnique({
+    const hall = await prisma_1.prisma.hall.findUnique({
         where: { id: payload.hallId },
     });
     if (!hall) {
@@ -181,7 +184,7 @@ const bulkGenerateRooms = async (payload) => {
             });
         }
     }
-    const result = await prisma.room.createMany({
+    const result = await prisma_1.prisma.room.createMany({
         data: roomsToCreate,
         skipDuplicates: true,
     });
@@ -199,7 +202,7 @@ const getAllRooms = async (query) => {
         }
     }
     if (query.hallId) {
-        const hall = await prisma.hall.findUnique({
+        const hall = await prisma_1.prisma.hall.findUnique({
             where: { id: query.hallId },
             select: { id: true, shortName: true, totalFloors: true },
         });
@@ -226,7 +229,7 @@ const getAllRooms = async (query) => {
             isActive: true,
         };
     }
-    const rooms = await prisma.room.findMany({
+    const rooms = await prisma_1.prisma.room.findMany({
         where: whereClause,
         orderBy: [
             { hall: { shortName: "asc" } },
@@ -258,7 +261,7 @@ const getAllRooms = async (query) => {
     return rooms;
 };
 const updateRoom = async (roomId, payload) => {
-    const room = await prisma.room.findUnique({
+    const room = await prisma_1.prisma.room.findUnique({
         where: { id: roomId },
     });
     if (!room) {
@@ -269,13 +272,13 @@ const updateRoom = async (roomId, payload) => {
         throw new Error(`Cannot reduce capacity to ${nextCapacity} because ${room.occupiedCount} students currently occupy this room.`);
     }
     let nextStatus = payload.status ?? room.status;
-    if (nextStatus !== RoomStatus.MAINTENANCE) {
+    if (nextStatus !== enums_1.RoomStatus.MAINTENANCE) {
         nextStatus =
             room.occupiedCount >= nextCapacity
-                ? RoomStatus.FULL
-                : RoomStatus.AVAILABLE;
+                ? enums_1.RoomStatus.FULL
+                : enums_1.RoomStatus.AVAILABLE;
     }
-    const updatedRoom = await prisma.room.update({
+    const updatedRoom = await prisma_1.prisma.room.update({
         where: { id: roomId },
         data: {
             capacity: nextCapacity,
@@ -284,7 +287,7 @@ const updateRoom = async (roomId, payload) => {
     });
     return updatedRoom;
 };
-export const HallServices = {
+exports.HallServices = {
     createHall,
     getAllHalls,
     getSingleHall,

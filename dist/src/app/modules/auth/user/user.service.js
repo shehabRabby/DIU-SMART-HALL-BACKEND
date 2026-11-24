@@ -1,7 +1,10 @@
-import { cloudinary } from "../../../lib/cloudinary";
-import { prisma } from "../../../lib/prisma";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.UserServices = void 0;
+const cloudinary_1 = require("../../../lib/cloudinary");
+const prisma_1 = require("../../../lib/prisma");
 const uploadProfileImage = async (buffer, userId) => {
-    const currentUser = await prisma.user.findUnique({
+    const currentUser = await prisma_1.prisma.user.findUnique({
         where: {
             id: userId,
         },
@@ -14,7 +17,7 @@ const uploadProfileImage = async (buffer, userId) => {
         throw new Error("User account not found.");
     }
     const cloudinaryResult = await new Promise((resolve, reject) => {
-        cloudinary.uploader
+        cloudinary_1.cloudinary.uploader
             .upload_stream({
             resource_type: "auto",
         }, async (error, result) => {
@@ -28,7 +31,7 @@ const uploadProfileImage = async (buffer, userId) => {
         })
             .end(buffer);
     });
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await prisma_1.prisma.user.update({
         where: {
             id: userId,
         },
@@ -42,10 +45,10 @@ const uploadProfileImage = async (buffer, userId) => {
     });
     // Remove the old profile image from Cloudinary if a previous one exists
     if (currentUser.imagePublicId) {
-        await cloudinary.uploader.destroy(currentUser.imagePublicId);
+        await cloudinary_1.cloudinary.uploader.destroy(currentUser.imagePublicId);
     }
     return updatedUser;
 };
-export const UserServices = {
+exports.UserServices = {
     uploadProfileImage,
 };

@@ -1,8 +1,11 @@
-import { prisma } from "../../lib/prisma";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.NoticeService = void 0;
+const prisma_1 = require("../../lib/prisma");
 // 1. Create Notice (Global when hallId is null, or Hall-Specific when hallId is provided)
 const createNotice = async (adminUserId, payload) => {
     if (payload.hallId) {
-        const hall = await prisma.hall.findUnique({
+        const hall = await prisma_1.prisma.hall.findUnique({
             where: { id: payload.hallId },
             select: { id: true, isActive: true },
         });
@@ -14,7 +17,7 @@ const createNotice = async (adminUserId, payload) => {
     if (expiresAt && expiresAt <= new Date()) {
         throw new Error("Notice expiration date must be in the future.");
     }
-    return prisma.notice.create({
+    return prisma_1.prisma.notice.create({
         data: {
             title: payload.title,
             content: payload.content,
@@ -59,7 +62,7 @@ const getStudentNotices = async (filters) => {
             ],
         });
     }
-    return prisma.notice.findMany({
+    return prisma_1.prisma.notice.findMany({
         where: { AND: andConditions },
         orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
         include: {
@@ -94,7 +97,7 @@ const getAllNoticesForAdmin = async (filters) => {
             ],
         });
     }
-    return prisma.notice.findMany({
+    return prisma_1.prisma.notice.findMany({
         where: andConditions.length ? { AND: andConditions } : {},
         orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
         include: {
@@ -105,7 +108,7 @@ const getAllNoticesForAdmin = async (filters) => {
 };
 // 4. Update Notice (Pin/Unpin, Edit Content, Replace Attachments, or Extend Expiry)
 const updateNotice = async (noticeId, payload) => {
-    const existing = await prisma.notice.findUnique({ where: { id: noticeId } });
+    const existing = await prisma_1.prisma.notice.findUnique({ where: { id: noticeId } });
     if (!existing) {
         throw new Error("Notice not found.");
     }
@@ -133,7 +136,7 @@ const updateNotice = async (noticeId, payload) => {
             ? new Date(payload.expiresAt)
             : null;
     }
-    return prisma.notice.update({
+    return prisma_1.prisma.notice.update({
         where: { id: noticeId },
         data: updateData,
         include: {
@@ -144,22 +147,22 @@ const updateNotice = async (noticeId, payload) => {
 };
 // 5. Manual Deletion of Single Notice (Admin)
 const deleteNotice = async (noticeId) => {
-    const existing = await prisma.notice.findUnique({ where: { id: noticeId } });
+    const existing = await prisma_1.prisma.notice.findUnique({ where: { id: noticeId } });
     if (!existing) {
         throw new Error("Notice not found.");
     }
-    return prisma.notice.delete({ where: { id: noticeId } });
+    return prisma_1.prisma.notice.delete({ where: { id: noticeId } });
 };
 // 6. Automated/Scheduled Bulk Purge of Expired Notices (Admin)
 const purgeExpiredNotices = async () => {
-    const result = await prisma.notice.deleteMany({
+    const result = await prisma_1.prisma.notice.deleteMany({
         where: {
             expiresAt: { lt: new Date() },
         },
     });
     return { deletedCount: result.count };
 };
-export const NoticeService = {
+exports.NoticeService = {
     createNotice,
     getStudentNotices,
     getAllNoticesForAdmin,

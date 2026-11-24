@@ -1,6 +1,9 @@
-import { catchAsync } from "../utils/catchAsync";
-export const validateRequest = (zodSchema) => {
-    return catchAsync((req, res, next) => {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.validateRequest = void 0;
+const catchAsync_1 = require("../utils/catchAsync");
+const validateRequest = (zodSchema) => {
+    return (0, catchAsync_1.catchAsync)((req, res, next) => {
         const payload = req.body ?? {};
         const result = zodSchema.safeParse(payload);
         if (!result.success) {
@@ -13,3 +16,4 @@ export const validateRequest = (zodSchema) => {
         next();
     });
 };
+exports.validateRequest = validateRequest;
