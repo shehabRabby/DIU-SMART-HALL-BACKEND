@@ -13,6 +13,7 @@ import {
 } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
+import { sendDigitalMealSlipEmail } from "./canteen.mail";
 import {
   ICreateCanteenOwnerPayload,
   ICreateFoodComplaintPayload,
@@ -43,14 +44,20 @@ const verifyResidentStudent = async (userId: string) => {
   const student = await prisma.student.findUnique({
     where: { userId },
     include: {
-      user: { select: { name: true, email: true, imageUrl: true, status: true } },
+      user: {
+        select: { name: true, email: true, imageUrl: true, status: true },
+      },
       hall: { select: { id: true, name: true, shortName: true } },
       room: { select: { id: true, roomNumber: true } },
       canteenWallet: true,
     },
   });
 
-  if (!student || student.isDeleted || student.user.status !== UserStatus.ACTIVE) {
+  if (
+    !student ||
+    student.isDeleted ||
+    student.user.status !== UserStatus.ACTIVE
+  ) {
     throw new Error("Active student profile not found.");
   }
   if (student.isExpelled) {
@@ -77,7 +84,11 @@ const verifyCanteenOwner = async (userId: string) => {
     },
   });
 
-  if (!profile || !profile.isActive || profile.user.status !== UserStatus.ACTIVE) {
+  if (
+    !profile ||
+    !profile.isActive ||
+    profile.user.status !== UserStatus.ACTIVE
+  ) {
     throw new Error(
       "Active Canteen Owner profile not found or suspended. Please contact Hall Admin.",
     );
@@ -560,13 +571,19 @@ const getVendorSalesAndDueLedger = async (
       },
       transactions: {
         where: { status: FoodPaymentStatus.PAID },
-        select: { tranId: true, gateway: true, gatewayRefId: true, verifiedAt: true },
+        select: {
+          tranId: true,
+          gateway: true,
+          gatewayRefId: true,
+          verifiedAt: true,
+        },
       },
     },
     orderBy: [{ mealDate: "desc" }, { createdAt: "desc" }],
   });
 
-  const breakdownByMethod: Record<string, { count: number; totalTk: number }> = {};
+  const breakdownByMethod: Record<string, { count: number; totalTk: number }> =
+    {};
   let totalSettledSalesTk = 0;
   let totalPendingCounterDueTk = 0;
   let totalNoShowUnpaidTk = 0;
@@ -589,7 +606,9 @@ const getVendorSalesAndDueLedger = async (
     }
     breakdownByMethod[order.paymentMethod].count += 1;
     breakdownByMethod[order.paymentMethod].totalTk = Number(
-      (breakdownByMethod[order.paymentMethod].totalTk + order.totalAmount).toFixed(2),
+      (
+        breakdownByMethod[order.paymentMethod].totalTk + order.totalAmount
+      ).toFixed(2),
     );
 
     if (order.paymentStatus === FoodPaymentStatus.PAID) {
@@ -734,7 +753,9 @@ const createFoodOrder = async (
   for (const item of payload.items) {
     const nextQty = (mergedItemMap.get(item.menuItemId) ?? 0) + item.quantity;
     if (nextQty > 10) {
-      throw new Error("Maximum 10 portions per item allowed in a single order.");
+      throw new Error(
+        "Maximum 10 portions per item allowed in a single order.",
+      );
     }
     mergedItemMap.set(item.menuItemId, nextQty);
   }
@@ -811,7 +832,7 @@ const createFoodOrder = async (
   );
 
   // 7. Execute Atomic Transaction (Stock Lock + 1Card Deduction + Order Creation)
-  return prisma.$transaction(async (tx) => {
+  const createdResult = await prisma.$transaction(async (tx) => {
     for (const item of preparedOrderItems) {
       if (item.hasStockCap) {
         const menu = menuMap.get(item.menuItemId)!;
@@ -897,6 +918,16 @@ const createFoodOrder = async (
       cutoffAt: schedule.cutoffAt,
     };
   });
+
+  // 8. Send Branded Digital Meal Slip Email immediately for confirmed orders
+  if (
+    createdResult.order.paymentMethod === FoodPaymentMethod.COUNTER_CASH ||
+    createdResult.order.paymentMethod === FoodPaymentMethod.ONECARD
+  ) {
+    void sendDigitalMealSlipEmail(createdResult.order.id);
+  }
+
+  return createdResult;
 };
 
 const cancelFoodOrder = async (

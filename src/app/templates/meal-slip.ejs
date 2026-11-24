@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= subject %></title>
+  <style>
+    /* Gateway-Specific Brand Themes */
+    .card-BKASH        { border: 1px solid #fbcfe8; }
+    .header-BKASH      { background: linear-gradient(135deg, #e2136e 0%, #b80d58 100%); }
+    .badge-BKASH       { background-color: #fce7f3; color: #be185d; border: 1px solid #f9a8d4; }
+    .token-box-BKASH   { background-color: #fdf2f8; border: 1.5px dashed #e2136e; }
+    .accent-BKASH      { color: #e2136e; }
+    .thead-BKASH       { background-color: #fdf2f8; color: #e2136e; border-bottom: 1.5px solid #fbcfe8; }
+
+    .card-STRIPE       { border: 1px solid #c7d2fe; }
+    .header-STRIPE     { background: linear-gradient(135deg, #635bff 0%, #4338ca 100%); }
+    .badge-STRIPE      { background-color: #e0e7ff; color: #4338ca; border: 1px solid #a5b4fc; }
+    .token-box-STRIPE  { background-color: #eef2ff; border: 1.5px dashed #635bff; }
+    .accent-STRIPE     { color: #635bff; }
+    .thead-STRIPE      { background-color: #eef2ff; color: #635bff; border-bottom: 1.5px solid #c7d2fe; }
+
+    .card-ONECARD      { border: 1px solid #bbf7d0; }
+    .header-ONECARD    { background: linear-gradient(135deg, #15803d 0%, #166534 100%); }
+    .badge-ONECARD     { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+    .token-box-ONECARD { background-color: #f0fdf4; border: 1.5px dashed #15803d; }
+    .accent-ONECARD    { color: #15803d; }
+    .thead-ONECARD     { background-color: #f0fdf4; color: #15803d; border-bottom: 1.5px solid #bbf7d0; }
+
+    .card-COUNTER_CASH      { border: 1px solid #fde68a; }
+    .header-COUNTER_CASH    { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+    .badge-COUNTER_CASH     { background-color: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+    .token-box-COUNTER_CASH { background-color: #fffbeb; border: 1.5px dashed #b45309; }
+    .accent-COUNTER_CASH    { color: #b45309; }
+    .thead-COUNTER_CASH     { background-color: #fffbeb; color: #b45309; border-bottom: 1.5px solid #fde68a; }
+  </style>
+</head>
+<body style="background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 32px 16px; color: #0f172a;">
+  <div class="card-<%= themeKey %>" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);">
+
+    <!-- Dynamic Payment-Method Branded Header -->
+    <div class="header-<%= themeKey %>" style="padding: 24px 32px; color: #ffffff;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td>
+            <p style="margin: 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #e2e8f0;">
+              DIU SmartHall Canteen Service
+            </p>
+            <h1 style="margin: 6px 0 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: #ffffff;">
+              Official Verified Meal Slip
+            </h1>
+          </td>
+          <td style="text-align: right; vertical-align: middle;">
+            <span style="display: inline-block; padding: 5px 12px; border-radius: 9999px; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; background-color: rgba(255, 255, 255, 0.18); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35);">
+              <%= gatewayLabel %>
+            </span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Body Content -->
+    <div style="padding: 32px;">
+      <!-- Payment & Order Status Badge -->
+      <div style="margin-bottom: 18px;">
+        <span class="badge-<%= themeKey %>" style="display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">
+          <%= paymentStatus === 'PAID' ? 'PAYMENT VERIFIED • CONFIRMED' : 'CONFIRMED • PAY CASH AT COUNTER' %>
+        </span>
+      </div>
+
+      <p style="margin: 0 0 10px; font-size: 15px; color: #334155;">
+        Dear <strong style="color: #0f172a;"><%= studentName %></strong><% if (studentUniId) { %> <span style="color: #64748b;">(ID: <%= studentUniId %>)</span><% } %>,
+      </p>
+
+      <p style="margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: #475569;">
+        Your meal pre-order at <strong><%= hallName %></strong> (<%= canteenName %>) is confirmed. Present the QR code or 4-digit Pickup PIN below at the canteen counter during your serving window.
+      </p>
+
+      <!-- QR Code + 4-Digit Pickup PIN Box -->
+      <div class="token-box-<%= themeKey %>" style="border-radius: 10px; padding: 20px; margin-bottom: 24px; text-align: center;">
+        <p class="accent-<%= themeKey %>" style="margin: 0 0 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">
+          One-Time Counter Redemption Token
+        </p>
+
+        <% if (qrImageUrl) { %>
+          <div style="margin: 8px auto 12px;">
+            <img src="<%= qrImageUrl %>" alt="Meal Slip QR Code" width="150" height="150" style="border-radius: 8px; border: 4px solid #ffffff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);" />
+          </div>
+        <% } %>
+
+        <p style="margin: 4px 0; font-size: 13px; color: #475569;">
+          Order Code: <strong style="font-size: 15px; color: #0f172a; letter-spacing: 0.03em;"><%= orderCode %></strong>
+        </p>
+
+        <div style="display: inline-block; margin-top: 8px; padding: 8px 20px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; display: block;">4-Digit Pickup PIN</span>
+          <strong class="accent-<%= themeKey %>" style="font-size: 24px; letter-spacing: 0.22em;"><%= pickupPin %></strong>
+        </div>
+      </div>
+
+      <!-- Order & Student Metadata Card -->
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px 20px; margin-bottom: 24px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 13.5px;">
+          <tr>
+            <td style="padding: 5px 0; color: #64748b; width: 42%;">Hall &amp; Room</td>
+            <td style="padding: 5px 0; font-weight: 600; color: #0f172a;"><%= hallShortName %> — Room <%= roomNumber %></td>
+          </tr>
+          <tr>
+            <td style="padding: 5px 0; color: #64748b;">Meal Date &amp; Slot</td>
+            <td style="padding: 5px 0; font-weight: 600; color: #0f172a;"><%= mealDate %> • <%= mealSlot %></td>
+          </tr>
+          <tr>
+            <td style="padding: 5px 0; color: #64748b;">Serving Window</td>
+            <td style="padding: 5px 0; font-weight: 600; color: #0f172a;"><%= servingWindow %></td>
+          </tr>
+          <tr>
+            <td style="padding: 5px 0; color: #64748b;">Payment Method</td>
+            <td class="accent-<%= themeKey %>" style="padding: 5px 0; font-weight: 700;"><%= gatewayLabel %> (<%= paymentStatus %>)</td>
+          </tr>
+          <% if (tranId) { %>
+            <tr>
+              <td style="padding: 5px 0; color: #64748b;">Transaction Ref</td>
+              <td style="padding: 5px 0; font-weight: 600; color: #0f172a; font-family: monospace;"><%= tranId %></td>
+            </tr>
+          <% } %>
+        </table>
+      </div>
+
+      <!-- Ordered Items Table -->
+      <table style="width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 20px;">
+        <thead>
+          <tr class="thead-<%= themeKey %>">
+            <th style="padding: 10px 12px; text-align: left;">Meal Item</th>
+            <th style="padding: 10px 12px; text-align: center;">Qty</th>
+            <th style="padding: 10px 12px; text-align: right;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% items.forEach(function(item) { %>
+            <tr>
+              <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-weight: 500;">
+                <%= item.itemName %> <span style="color: #64748b; font-size: 12px;">(<%= item.portion %>)</span>
+              </td>
+              <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #334155;">
+                <%= item.quantity %>
+              </td>
+              <td style="padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600; color: #0f172a;">
+                <%= item.subtotal.toFixed(2) %> BDT
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" style="padding: 12px; text-align: right; font-weight: 700; color: #334155;">Total Amount:</td>
+            <td class="accent-<%= themeKey %>" style="padding: 12px; text-align: right; font-size: 16px; font-weight: 800;">
+              <%= totalAmount.toFixed(2) %> BDT
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- Security Note -->
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 12.5px; line-height: 1.5; color: #64748b;">
+        <strong style="color: #475569;">Security Notice:</strong> This QR token and 4-digit PIN are single-use and valid only at <strong><%= hallShortName %></strong> during <strong><%= servingWindow %></strong> on <strong><%= mealDate %></strong>. Do not share your PIN with others.
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f1f5f9; padding: 16px 32px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0;">
+      &copy; <%= new Date().getFullYear() %> DIU SmartHall Management System. Automated Digital Meal Slip.
+    </div>
+  </div>
+</body>
+</html>
