@@ -1,0 +1,1654 @@
+{
+  "info": {
+    "_postman_id": "214a86c3-21e7-4b67-a20a-5a95ff205aa8",
+    "name": "DIU Smart Hall",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54681407",
+    "_collection_link": "https://go.postman.co/collection/54681407-214a86c3-21e7-4b67-a20a-5a95ff205aa8?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Student",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Md Rabby\",\r\n  \"email\": \"rabby2305101467@diu.edu.bd\",\r\n  \"password\": \"Password@123\",\r\n  \"student\": {\r\n    \"studentUniId\": \"232-15-404\",\r\n    \"department\": \"CSE\",\r\n    \"contactNumber\": \"0171234539\"\r\n  }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "verify-email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \r\n  \"email\": \"rabby2305101467@diu.edu.bd\",\r\n  \"otp\": \"850051\"\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/verify-email",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "auth", "verify-email"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Credential Login canteen Owner",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"testercanteenowner@gmail.com\",\r\n  \"password\": \"TesterCanteenOwner@12345\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Credential Login student",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"email\": \"rabby2305101467@diu.edu.bd\",\r\n  \"password\": \"Password@123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Credential Login student Admin",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n      \"email\": \"testeradmin@gmail.com\",\r\n  \"password\": \"TesterAdmin@12345\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Forget Password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\":\"\",\r\n    \"password\":\"\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/forgot-password",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "auth", "forgot-password"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\":\"\",\r\n    \"newPassword\":\"\",\r\n    \"otp\":\"\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/reset-password",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "auth", "reset-password"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "user",
+      "item": [
+        {
+          "name": "profileImage Upload",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Hall",
+      "item": [
+        {
+          "name": "hall create",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Gell All Hall",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Room",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "floor seat check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Room maintenance by room Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Hall Room checking by Hall ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Seat",
+      "item": [
+        {
+          "name": "Apply for Hall Seat",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Seat Applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Withdraw Pending Seat Application",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Seat Applications (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recommended Rooms for Application (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Seat Application (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Current Seat & Roommates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Room Change Request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve room change (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Seat Analytics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Seat By Student",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Direct Seat Allocation - Admin",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Present Resident Seat",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check All Seat & Room Change History(Student)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pending Room Change Request (Student)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Request (student)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Descpline",
+      "item": [
+        {
+          "name": "Report Student Incident (Student or Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Incident Reports (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Escalate Incident to Show-Cause (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Warnings & Notices (Student)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Warning Appeal (Student)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Review Appeal - Uphold Warning (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Conduct Clearance (Student)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Warning Fine Paid (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Issue Direct Warning (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Issue Direct Warning - 3rd Strike Auto Expulsion (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Warning (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Descipline Analytics (admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notice",
+      "item": [
+        {
+          "name": "Create Global Notice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0p7k}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Annual Hall Sports & Cultural Week 2026",
+                  "type": "text"
+                },
+                {
+                  "key": "content",
+                  "value": "Attached are the event schedule PDF and venue layout image. Registration closes on December 10.",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "EVENT",
+                  "type": "text"
+                },
+                {
+                  "key": "priority",
+                  "value": "HIGH",
+                  "type": "text"
+                },
+                {
+                  "key": "isPinned",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": [
+                    "/C:/Users/DCL/Downloads/DIU Smart Hall - Seat Allocation Requirements.pdf",
+                    "/C:/Users/DCL/Downloads/গ.docx"
+                  ]
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/notices",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "notices"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student Notice Feed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/notices",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "notices"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Notices for Admin Management",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_13ic}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notices/admin/all?includeExpired=true",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "notices", "admin", "all"],
+              "query": [
+                {
+                  "key": "includeExpired",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Notice Update",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_13ic}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"title\": \"Updated: Yunus Khan Scholar Garden-2 Special Friday Feast Menu\",\r\n  \"priority\": \"CRITICAL\",\r\n  \"isPinned\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/notices/3b6a6c6f-3784-4f71-a6c0-385d5d24f40d",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "notices",
+                "3b6a6c6f-3784-4f71-a6c0-385d5d24f40d"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Notice",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_13ic}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notices/b06bcd4e-7cf2-4d26-a620-1fcd32dd6825",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "notices",
+                "b06bcd4e-7cf2-4d26-a620-1fcd32dd6825"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Gate pass",
+      "item": [
+        {
+          "name": "Create Gate Pass Request (Resident Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0fj8}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"passType\": \"HOME_LEAVE\",\r\n  \"reason\": \"Going home for weekend family program and personal checkup.\",\r\n  \"destination\": \"Cumilla Sadar, Cumilla\",\r\n  \"emergencyContact\": \"01711223344\",\r\n  \"departureAt\": \"2026-11-24T09:00:00.000Z\",\r\n  \"expectedReturnAt\": \"2026-11-26T18:00:00.000Z\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/gate-passes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "gate-passes"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Gate Passes (Student)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0fj8}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/gate-passes/my-passes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "gate-passes", "my-passes"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Gate Passes for Admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0tfv}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/gate-passes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "gate-passes"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Gate Pass & Trigger QR Email (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0tfv}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"status\": \"APPROVED\",\r\n  \"adminNote\": \"Approved. Return before 6:00 PM on the scheduled date.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/gate-passes/8e32e6cf-462f-4d3c-9695-eb071b9ada65/review",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "gate-passes",
+                "8e32e6cf-462f-4d3c-9695-eb071b9ada65",
+                "review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "QR code Exit Validation (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0tfv}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/gate-passes/verify-qr/35bb0ec83a04aa2d32fa2b9538f08372c21e453d2c269628",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "gate-passes",
+                "verify-qr",
+                "35bb0ec83a04aa2d32fa2b9538f08372c21e453d2c269628"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Gate Log Update Check Out (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0tfv}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"action\": \"CHECKED_OUT\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/gate-passes/8e32e6cf-462f-4d3c-9695-eb071b9ada65/gate-log",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "gate-passes",
+                "8e32e6cf-462f-4d3c-9695-eb071b9ada65",
+                "gate-log"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "QR Invalid Return Hall",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"action\": \"RETURNED\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/gate-passes/8e32e6cf-462f-4d3c-9695-eb071b9ada65/gate-log",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "gate-passes",
+                "8e32e6cf-462f-4d3c-9695-eb071b9ada65",
+                "gate-log"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "QR Again Scan Valid or Invalid",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0tfv}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/gate-passes/verify-qr/35bb0ec83a04aa2d32fa2b9538f08372c21e453d2c269628",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "gate-passes",
+                "verify-qr",
+                "35bb0ec83a04aa2d32fa2b9538f08372c21e453d2c269628"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Pending Gate Pass (Student)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/gate-passes/213986-13896793/cancel",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "gate-passes", "213986-13896793", "cancel"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Canteen Management",
+      "item": [
+        {
+          "name": "Admin_Create_Canteen_Owner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0ejs}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Tester CanteenOwner 2\",\r\n  \"email\": \"testercanteenowner2@gmail.com\",\r\n  \"password\": \"TesterCanteenOwner@12345\",\r\n  \"businessName\": \"Hall 2 Central Canteen\",\r\n  \"contactPhone\": \"01711223344\",\r\n  \"hallId\": \"61d710f5-dfba-441c-bb33-d9f70b8b8506\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/owners",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "owners"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Update_Canteen_Owner_Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0ejs}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"isActive\": true,\r\n  \"removeAccount\": false,\r\n  \"reason\": \"Hygiene audit cleared\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/owners/eeb0c08a-dba8-4a68-95dc-485468b386f9/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "canteen",
+                "owners",
+                "eeb0c08a-dba8-4a68-95dc-485468b386f9",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Upsert_Master_Price",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get_Hall_Master_Prices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Review_Menu_Price",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Owner_Create_Menu_Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_035x}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Chicken Curry\",\r\n  \"category\": \"CHICKEN\",\r\n  \"portion\": \"REGULAR\",\r\n  \"description\": \"Spicy broiler chicken curry with potato\",\r\n  \"price\": 85,\r\n  \"isRegular\": true,\r\n  \"isSpecial\": false,\r\n  \"availableSlots\": [\"LUNCH\", \"DINNER\"],\r\n  \"maxQuantity\": 50,\r\n  \"isAvailable\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/menu",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "menu"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Owner_Update_Menu_Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0mxq}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"description\": \"Spicy broiler chicken curry with roasted potato and rich gravy\",\r\n  \"maxQuantity\": 60,\r\n  \"isAvailable\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/menu/b13f71f8-7b35-460d-bd5b-03717b673cdd",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "canteen",
+                "menu",
+                "b13f71f8-7b35-460d-bd5b-03717b673cdd"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Owner_Get_My_Canteen_Menu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0mxq}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/canteen/menu/my-canteen",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "menu", "my-canteen"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student_Get_Live_Menu",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_11zm}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/canteen/menu/live?mealSlot=LUNCH",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "menu", "live"],
+              "query": [
+                {
+                  "key": "mealSlot",
+                  "value": "LUNCH"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student_Create_Food_Order-bKash",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_11zm}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"mealDate\": \"2026-11-25\",\r\n  \"mealSlot\": \"DINNER\",\r\n  \"paymentMethod\": \"BKASH\",\r\n  \"items\": [\r\n    {\r\n      \"menuItemId\": \"ed3cde8c-7b76-4da6-9e70-7a6c308c785b\",\r\n      \"quantity\": 1\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/orders",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student_Get_My_Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_11zm}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/canteen/orders/my-orders",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "orders", "my-orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student_Initiate_Order_Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_17rh}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/orders/016dda6d-c28d-44f7-8a72-1a2191825a06/pay",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "canteen",
+                "orders",
+                "016dda6d-c28d-44f7-8a72-1a2191825a06",
+                "pay"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student_Create_Food_Order-Stripe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_17rh}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"mealDate\": \"2026-11-25\",\r\n  \"mealSlot\": \"DINNER\",\r\n  \"paymentMethod\": \"STRIPE\",\r\n  \"items\": [\r\n    {\r\n      \"menuItemId\": \"ed3cde8c-7b76-4da6-9e70-7a6c308c785b\",\r\n      \"quantity\": 1\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/orders",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "orders"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student_Get_Digital_Meal_Slip",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_17rh}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/canteen/orders/5c97708a-0921-4fc6-a565-dd2565fd0a34/slip",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "canteen",
+                "orders",
+                "5c97708a-0921-4fc6-a565-dd2565fd0a34",
+                "slip"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student_Verify_Stripe_Payment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_17rh}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/canteen/payments/stripe/verify/cs_test_a0PTr9aUh1yDIGNljTDeMZepjrwEjTJLyCffXHm1DAL1kxf67crnO3CDD6",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "canteen",
+                "payments",
+                "stripe",
+                "verify",
+                "cs_test_a0PTr9aUh1yDIGNljTDeMZepjrwEjTJLyCffXHm1DAL1kxf67crnO3CDD6"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student_Cancel_Food_Order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"cancelReason\": \"Changed my dinner plan\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/orders/c79a55ad-af46-4d42-b47b-33c8faeeef4d/cancel",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "canteen",
+                "orders",
+                "c79a55ad-af46-4d42-b47b-33c8faeeef4d",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Owner_Kitchen_Prep_Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0jpc}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/canteen/kitchen/prep-summary?mealDate=2026-11-25&mealSlot=LUNCH",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "kitchen", "prep-summary"],
+              "query": [
+                {
+                  "key": "mealDate",
+                  "value": "2026-11-25"
+                },
+                {
+                  "key": "mealSlot",
+                  "value": "LUNCH"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Owner_Sales_And_Due_Ledger",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/canteen/ledger",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "ledger"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Owner_Update_Order_Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"orderStatus\": \"PREPARING\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/orders/016dda6d-c28d-44f7-8a72-1a2191825a06/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "canteen",
+                "orders",
+                "016dda6d-c28d-44f7-8a72-1a2191825a06",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Owner_Redeem_Food_Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"orderCode\": \"DIU-FD-682658\",\r\n  \"pickupPin\": \"6510\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/orders/redeem",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "orders", "redeem"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student_Create_Meal_Review",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": ""
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Student_Create_Food_Complaint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"orderId\": \"016dda6d-c28d-44f7-8a72-1a2191825a06\",\r\n  \"title\": \"Underweight Chicken Curry Portion\",\r\n  \"description\": \"The Chicken Curry portion size was slightly smaller than the approved standard weight.\",\r\n  \"evidenceUrls\": [\r\n    \"https://res.cloudinary.com/demo/image/upload/sample_meal_proof.jpg\"\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/complaints",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "v1", "canteen", "complaints"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Resolve_Food_Complaint",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"status\": \"WARNING_ISSUED\",\r\n  \"fineAmount\": 0,\r\n  \"adminNote\": \"First formal warning issued to canteen owner for underweight portion. Maintain approved standard weight.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/canteen/complaints/36428388-d93c-42ea-b57e-01c605538002/resolve",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": [
+                "api",
+                "v1",
+                "canteen",
+                "complaints",
+                "36428388-d93c-42ea-b57e-01c605538002",
+                "resolve"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "json_web_token_0ejs",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_035x",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0mxq",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_11zm",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_17rh",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0fj8",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0tfv",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0p7k",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_13ic",
+      "secret": true
+    }
+  ]
+}
