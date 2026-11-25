@@ -14,7 +14,6 @@ router.get(
   SeatController.getSeatAnalytics,
 );
 
-//Problem THIS ROUTE ONNO TOKEN USE KOREO APPLY KORA JACCHE
 // 2. SEAT APPLICATION ROUTES
 router.post(
   "/apply",

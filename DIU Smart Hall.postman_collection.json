@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "214a86c3-21e7-4b67-a20a-5a95ff205aa8",
+    "_postman_id": "1ceb1c0b-3636-4b57-b502-c30654e29ed1",
     "name": "DIU Smart Hall",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "54681407",
-    "_collection_link": "https://go.postman.co/collection/54681407-214a86c3-21e7-4b67-a20a-5a95ff205aa8?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/54681407-1ceb1c0b-3636-4b57-b502-c30654e29ed1?source=collection_link"
   },
   "item": [
     {
@@ -17,7 +17,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"name\": \"Md Rabby\",\r\n  \"email\": \"rabby2305101467@diu.edu.bd\",\r\n  \"password\": \"Password@123\",\r\n  \"student\": {\r\n    \"studentUniId\": \"232-15-404\",\r\n    \"department\": \"CSE\",\r\n    \"contactNumber\": \"0171234539\"\r\n  }\r\n}",
+              "raw": "{\r\n  \"name\": \"Md Rabby\",\r\n  \"email\": \"shehabalrabby@gmail.com\",\r\n  \"password\": \"Password@123\",\r\n  \"student\": {\r\n    \"studentUniId\": \"232-15-111\",\r\n    \"department\": \"CSE\",\r\n    \"contactNumber\": \"0171234539\"\r\n  }\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -26,10 +26,13 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "auth", "register"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
             }
           },
           "response": []
@@ -41,7 +44,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \r\n  \"email\": \"rabby2305101467@diu.edu.bd\",\r\n  \"otp\": \"850051\"\r\n\r\n}",
+              "raw": "{\r\n  \r\n  \"email\": \"shehabalrabby@gmail.com\",\r\n  \"otp\": \"326191\"\r\n\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -50,10 +53,13 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/verify-email",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "auth", "verify-email"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ]
             }
           },
           "response": []
@@ -74,10 +80,13 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "auth", "login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           },
           "response": []
@@ -89,7 +98,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"email\": \"rabby2305101467@diu.edu.bd\",\r\n  \"password\": \"Password@123\"\r\n}",
+              "raw": "{\r\n  \"email\": \"shehabalrabby@gmail.com\",\r\n  \"password\": \"Password@123\"\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -98,16 +107,19 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "auth", "login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Credential Login student Admin",
+          "name": "Credential Login Admin",
           "request": {
             "method": "POST",
             "header": [],
@@ -122,10 +134,40 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "auth", "login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Credential Login Super Admin",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n      \"email\": \"superadmin@gmail.com\",\r\n  \"password\": \"SuperAdmin@12345\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
             }
           },
           "response": []
@@ -146,10 +188,13 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/forgot-password",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "auth", "forgot-password"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
             }
           },
           "response": []
@@ -170,10 +215,13 @@
             },
             "url": {
               "raw": "{{base_url}}/auth/reset-password",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "auth", "reset-password"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
             }
           },
           "response": []
@@ -184,12 +232,19 @@
       "name": "user",
       "item": [
         {
-          "name": "profileImage Upload",
+          "name": "Upload_Profile_Image",
           "request": {
-            "method": "GET",
+            "method": "PATCH",
             "header": [],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/users/profile-image",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "users",
+                "profile-image"
+              ]
             }
           },
           "response": []
@@ -200,12 +255,35 @@
       "name": "Hall",
       "item": [
         {
-          "name": "hall create",
+          "name": "SuperAdmin_Create_Hall",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"name\": \"Younus Khan Scholars Garden 1\",\r\n  \"shortName\": \"YKSG-1\",\r\n  \"genderType\": \"MALE\",\r\n  \"totalFloors\": 5,\r\n  \"roomsPerFloor\": 10,\r\n  \"defaultRoomCapacity\": 4,\r\n  \"monthlyFee\": 3500\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/halls",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "halls"
+              ]
             }
           },
           "response": []
@@ -222,45 +300,178 @@
           "response": []
         },
         {
-          "name": "Bulk Room",
+          "name": "Bulk Generate Rooms",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"hallId\": \"40df50cf-60c2-45fe-a2c5-0e5ec019fcb9\",\r\n  \"startFloor\": 2,\r\n  \"endFloor\": 3,\r\n  \"roomsPerFloor\": 5,\r\n  \"capacity\": 4\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/halls/rooms/generate-bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "halls",
+                "rooms",
+                "generate-bulk"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "floor seat check",
+          "name": "Get Single Hall",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/halls/79407428-d841-4c18-b606-1d68fe6fc76b",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "halls",
+                "79407428-d841-4c18-b606-1d68fe6fc76b"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Room maintenance by room Id",
+          "name": "SuperAdmin_Update_Hall",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_0grq}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"monthlyFee\": 3600,\r\n  \"isActive\": true\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/halls/40df50cf-60c2-45fe-a2c5-0e5ec019fcb9",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "halls",
+                "40df50cf-60c2-45fe-a2c5-0e5ec019fcb9"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Hall Room checking by Hall ID",
+          "name": "Create Single Room",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{json_web_token_07z8}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"hallId\": \"40df50cf-60c2-45fe-a2c5-0e5ec019fcb9\",\r\n  \"roomNumber\": \"101\",\r\n  \"floor\": 1,\r\n  \"capacity\": 4\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/halls/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "halls",
+                "rooms"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Rooms",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/halls/rooms?hallId=40df50cf-60c2-45fe-a2c5-0e5ec019fcb9",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "halls",
+                "rooms"
+              ],
+              "query": [
+                {
+                  "key": "hallId",
+                  "value": "40df50cf-60c2-45fe-a2c5-0e5ec019fcb9"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Room",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"capacity\": 3,\r\n  \"status\": \"MAINTENANCE\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/halls/rooms/e4a1818f-625b-4b83-aded-5b244589a35f",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "halls",
+                "rooms",
+                "e4a1818f-625b-4b83-aded-5b244589a35f"
+              ]
             }
           },
           "response": []
@@ -273,10 +484,31 @@
         {
           "name": "Apply for Hall Seat",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"studentUniId\": \"232-15-111\",\r\n  \"email\": \"shehabalrabby@gmail.com\",\r\n  \"department\": \"CSE\",\r\n  \"personalPhoneNumber\": \"01712345390\",\r\n  \"parentPhoneNumber\": \"01812345390\",\r\n  \"gender\": \"MALE\",\r\n  \"previousAddress\": \"Dhanmondi, Dhaka-1205\",\r\n  \"reason\": \"Re-applying with updated personal details for hall seat allocation.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/apply",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "apply"
+              ]
             }
           },
           "response": []
@@ -285,9 +517,21 @@
           "name": "Get My Seat Applications",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/my-applications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "my-applications"
+              ]
             }
           },
           "response": []
@@ -295,10 +539,24 @@
         {
           "name": "Withdraw Pending Seat Application",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/applications/5e647bb0-5501-47c6-84d7-ddac5675cd82/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "applications",
+                "5e647bb0-5501-47c6-84d7-ddac5675cd82",
+                "cancel"
+              ]
             }
           },
           "response": []
@@ -307,9 +565,27 @@
           "name": "Get All Seat Applications (Admin)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/applications?status=PENDING",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "applications"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
             }
           },
           "response": []
@@ -320,7 +596,16 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/applications/28230169-86c1-4598-bdeb-8dd34f653f8e/recommended-rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "applications",
+                "28230169-86c1-4598-bdeb-8dd34f653f8e",
+                "recommended-rooms"
+              ]
             }
           },
           "response": []
@@ -328,10 +613,33 @@
         {
           "name": "Approve Seat Application (Admin)",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"hallId\": \"79407428-d841-4c18-b606-1d68fe6fc76b\",\r\n  \"roomId\": \"18aca8b7-18d9-4560-bbd5-47d4c42e9212\",\r\n  \"adminNote\": \"Approved based on CSE batch-mate priority in Room 010.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/applications/28230169-86c1-4598-bdeb-8dd34f653f8e/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "applications",
+                "28230169-86c1-4598-bdeb-8dd34f653f8e",
+                "approve"
+              ]
             }
           },
           "response": []
@@ -340,9 +648,21 @@
           "name": "Get My Current Seat & Roommates",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/my-seat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "my-seat"
+              ]
             }
           },
           "response": []
@@ -350,10 +670,31 @@
         {
           "name": "Room Change Request",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"targetHallId\": \"79407428-d841-4c18-b606-1d68fe6fc76b\",\r\n  \"targetRoomId\": \"97d57383-d5ca-4c1f-ab7e-c3afb75588b0\",\r\n  \"reason\": \"Requesting to shift to Room 011 on the same floor for a quieter study environment.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/room-change",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "room-change"
+              ]
             }
           },
           "response": []
@@ -361,10 +702,33 @@
         {
           "name": "Approve room change (Admin)",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"targetHallId\": \"79407428-d841-4c18-b606-1d68fe6fc76b\",\r\n  \"targetRoomId\": \"97d57383-d5ca-4c1f-ab7e-c3afb75588b0\",\r\n  \"adminNote\": \"Room transfer approved. Student shifted from Room 010 to Room 011.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/room-change/40fe3fa0-2550-4a51-a50f-38b98b99b959/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "room-change",
+                "40fe3fa0-2550-4a51-a50f-38b98b99b959",
+                "approve"
+              ]
             }
           },
           "response": []
@@ -373,9 +737,21 @@
           "name": "Seat Analytics (Admin)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/analytics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "analytics"
+              ]
             }
           },
           "response": []
@@ -383,10 +759,31 @@
         {
           "name": "Cancel Seat By Student",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"reason\": \"Completed semester requirements and vacating the hall seat permanently.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/cancel-my-seat",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "cancel-my-seat"
+              ]
             }
           },
           "response": []
@@ -394,10 +791,26 @@
         {
           "name": "Direct Seat Allocation - Admin",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"studentId\": \"09da44b2-680a-43fd-a194-1c29baf26738\",\r\n  \"hallId\": \"79407428-d841-4c18-b606-1d68fe6fc76b\",\r\n  \"roomId\": \"1cee19e7-972d-4ff5-b6c4-6b571d57a1bf\",\r\n  \"adminNote\": \"Direct emergency seat allocation in Room 012 by hall administration.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/direct-allocate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "direct-allocate"
+              ]
             }
           },
           "response": []
@@ -406,9 +819,21 @@
           "name": "Present Resident Seat",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/residents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "residents"
+              ]
             }
           },
           "response": []
@@ -417,31 +842,62 @@
           "name": "Check All Seat & Room Change History(Student)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/my-history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "my-history"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Pending Room Change Request (Student)",
+          "name": "Get My Room Change Requests (Student)",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/my-room-changes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "my-room-changes"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Cancel Request (student)",
+          "name": "Get All Room Change Requests (Admin)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/seats/room-change",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "seats",
+                "room-change"
+              ]
             }
           },
           "response": []
@@ -452,133 +908,332 @@
       "name": "Descpline",
       "item": [
         {
-          "name": "Report Student Incident (Student or Admin)",
+          "name": "Get All Incident Reports (Admin) -",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/incidents?status=OPEN",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "incidents"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "OPEN"
+                }
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Get All Incident Reports (Admin)",
+          "name": "Submit Warning Appeal (Student) -",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"appealText\": \"I sincerely apologize for the disturbance. My roommate accidentally left the speaker on while I was studying in the library. It will not happen again.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/warnings/028138ff-67a3-4c47-a90b-19d60dc6c135/appeal",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "warnings",
+                "028138ff-67a3-4c47-a90b-19d60dc6c135",
+                "appeal"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Escalate Incident to Show-Cause (Admin)",
+          "name": "Review Appeal - Uphold Warning (Admin) -",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"decision\": \"UPHOLD\",\r\n  \"reviewNote\": \"Roommates share equal responsibility for room noise. Strike 1 and fine upheld.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/warnings/028138ff-67a3-4c47-a90b-19d60dc6c135/review-appeal",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "warnings",
+                "028138ff-67a3-4c47-a90b-19d60dc6c135",
+                "review-appeal"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Get My Warnings & Notices (Student)",
+          "name": "Student_Get_My_Clearance -",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/my-clearance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "my-clearance"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Submit Warning Appeal (Student)",
+          "name": "Mark Warning Fine Paid (Admin) -",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/warnings/028138ff-67a3-4c47-a90b-19d60dc6c135/pay-fine",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "warnings",
+                "028138ff-67a3-4c47-a90b-19d60dc6c135",
+                "pay-fine"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Review Appeal - Uphold Warning (Admin)",
+          "name": "Issue Direct Warning (Admin) -",
           "request": {
-            "method": "GET",
+            "method": "POST",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"studentId\": \"232-15-404\",\r\n  \"title\": \"Late Entry After Curfew Hours\",\r\n  \"reason\": \"Entered the hall gate at 11:45 PM without prior late-entry permission.\",\r\n  \"category\": \"LATE_ENTRY\",\r\n  \"severity\": \"MODERATE\",\r\n  \"fineAmount\": 250\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/warnings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "warnings"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Get My Conduct Clearance (Student)",
+          "name": "Get All Warning (Admin) -",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/warnings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "warnings"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Mark Warning Fine Paid (Admin)",
+          "name": "Admin_Get_Discipline_Analytics-",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/analytics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "analytics"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Issue Direct Warning (Admin)",
+          "name": "Create_Incident_Report -",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"accusedStudentId\": \"232-15-404\",\r\n  \"title\": \"Late Night Loud Noise in Room 010\",\r\n  \"description\": \"Playing loud music after 12:30 AM disturbing neighboring rooms.\",\r\n  \"category\": \"NOISE_DISTURBANCE\",\r\n  \"severity\": \"MINOR\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/incidents",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "incidents"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Issue Direct Warning - 3rd Strike Auto Expulsion (Admin)",
+          "name": "Escalate Incident to Show-Cause (Admin) -",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"action\": \"ESCALATED\",\r\n  \"mediationNotes\": \"Verified complaint from neighbors. Escalating to formal show-cause notice with fine.\",\r\n  \"issueAsShowCause\": true,\r\n  \"appealHours\": 48,\r\n  \"fineAmount\": 300\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/incidents/5bac3d59-5ca0-4fc5-a993-05d28756076f/resolve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "incidents",
+                "5bac3d59-5ca0-4fc5-a993-05d28756076f",
+                "resolve"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Get All Warning (Admin)",
+          "name": "Get My Warnings & Notices (Student) -",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/my-warnings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "my-warnings"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Descipline Analytics (admin)",
+          "name": "Revoke Expulsion (Super Admin Only) -",
           "request": {
-            "method": "GET",
-            "header": [],
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": ""
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"revokeReason\": \"Clemency granted by Hall Provost Committee following formal apology and parental undertaking.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": ""
+              "raw": "{{base_url}}/discipline/students/232-15-467/revoke-expulsion",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "discipline",
+                "students",
+                "232-15-467",
+                "revoke-expulsion"
+              ]
             }
           },
           "response": []
@@ -638,10 +1293,12 @@
             },
             "url": {
               "raw": "{{base_url}}/notices",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "notices"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notices"
+              ]
             }
           },
           "response": []
@@ -656,21 +1313,14 @@
                 "value": ""
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
               "raw": "{{base_url}}/notices",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "notices"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notices"
+              ]
             }
           },
           "response": []
@@ -687,10 +1337,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/notices/admin/all?includeExpired=true",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "notices", "admin", "all"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notices",
+                "admin",
+                "all"
+              ],
               "query": [
                 {
                   "key": "includeExpired",
@@ -722,12 +1376,10 @@
             },
             "url": {
               "raw": "{{base_url}}/notices/3b6a6c6f-3784-4f71-a6c0-385d5d24f40d",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "notices",
                 "3b6a6c6f-3784-4f71-a6c0-385d5d24f40d"
               ]
@@ -747,12 +1399,10 @@
             ],
             "url": {
               "raw": "{{base_url}}/notices/b06bcd4e-7cf2-4d26-a620-1fcd32dd6825",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "notices",
                 "b06bcd4e-7cf2-4d26-a620-1fcd32dd6825"
               ]
@@ -786,10 +1436,12 @@
             },
             "url": {
               "raw": "{{base_url}}/gate-passes",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "gate-passes"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "gate-passes"
+              ]
             }
           },
           "response": []
@@ -806,10 +1458,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/gate-passes/my-passes",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "gate-passes", "my-passes"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "gate-passes",
+                "my-passes"
+              ]
             }
           },
           "response": []
@@ -826,10 +1481,12 @@
             ],
             "url": {
               "raw": "{{base_url}}/gate-passes",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "gate-passes"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "gate-passes"
+              ]
             }
           },
           "response": []
@@ -855,12 +1512,10 @@
             },
             "url": {
               "raw": "{{base_url}}/gate-passes/8e32e6cf-462f-4d3c-9695-eb071b9ada65/review",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "gate-passes",
                 "8e32e6cf-462f-4d3c-9695-eb071b9ada65",
                 "review"
@@ -881,12 +1536,10 @@
             ],
             "url": {
               "raw": "{{base_url}}/gate-passes/verify-qr/35bb0ec83a04aa2d32fa2b9538f08372c21e453d2c269628",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "gate-passes",
                 "verify-qr",
                 "35bb0ec83a04aa2d32fa2b9538f08372c21e453d2c269628"
@@ -916,12 +1569,10 @@
             },
             "url": {
               "raw": "{{base_url}}/gate-passes/8e32e6cf-462f-4d3c-9695-eb071b9ada65/gate-log",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "gate-passes",
                 "8e32e6cf-462f-4d3c-9695-eb071b9ada65",
                 "gate-log"
@@ -946,12 +1597,10 @@
             },
             "url": {
               "raw": "{{base_url}}/gate-passes/8e32e6cf-462f-4d3c-9695-eb071b9ada65/gate-log",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "gate-passes",
                 "8e32e6cf-462f-4d3c-9695-eb071b9ada65",
                 "gate-log"
@@ -972,12 +1621,10 @@
             ],
             "url": {
               "raw": "{{base_url}}/gate-passes/verify-qr/35bb0ec83a04aa2d32fa2b9538f08372c21e453d2c269628",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "gate-passes",
                 "verify-qr",
                 "35bb0ec83a04aa2d32fa2b9538f08372c21e453d2c269628"
@@ -993,10 +1640,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/gate-passes/213986-13896793/cancel",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "gate-passes", "213986-13896793", "cancel"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "gate-passes",
+                "213986-13896793",
+                "cancel"
+              ]
             }
           },
           "response": []
@@ -1027,10 +1678,13 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/owners",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "owners"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "owners"
+              ]
             }
           },
           "response": []
@@ -1056,12 +1710,10 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/owners/eeb0c08a-dba8-4a68-95dc-485468b386f9/status",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "canteen",
                 "owners",
                 "eeb0c08a-dba8-4a68-95dc-485468b386f9",
@@ -1125,10 +1777,13 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/menu",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "menu"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "menu"
+              ]
             }
           },
           "response": []
@@ -1154,12 +1809,10 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/menu/b13f71f8-7b35-460d-bd5b-03717b673cdd",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "canteen",
                 "menu",
                 "b13f71f8-7b35-460d-bd5b-03717b673cdd"
@@ -1180,10 +1833,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/canteen/menu/my-canteen",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "menu", "my-canteen"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "menu",
+                "my-canteen"
+              ]
             }
           },
           "response": []
@@ -1200,10 +1857,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/canteen/menu/live?mealSlot=LUNCH",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "menu", "live"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "menu",
+                "live"
+              ],
               "query": [
                 {
                   "key": "mealSlot",
@@ -1235,10 +1896,13 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/orders",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "orders"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "orders"
+              ]
             }
           },
           "response": []
@@ -1255,10 +1919,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/canteen/orders/my-orders",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "orders", "my-orders"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "orders",
+                "my-orders"
+              ]
             }
           },
           "response": []
@@ -1284,12 +1952,10 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/orders/016dda6d-c28d-44f7-8a72-1a2191825a06/pay",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "canteen",
                 "orders",
                 "016dda6d-c28d-44f7-8a72-1a2191825a06",
@@ -1320,10 +1986,13 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/orders",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "orders"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "orders"
+              ]
             }
           },
           "response": []
@@ -1340,12 +2009,10 @@
             ],
             "url": {
               "raw": "{{base_url}}/canteen/orders/5c97708a-0921-4fc6-a565-dd2565fd0a34/slip",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "canteen",
                 "orders",
                 "5c97708a-0921-4fc6-a565-dd2565fd0a34",
@@ -1367,12 +2034,10 @@
             ],
             "url": {
               "raw": "{{base_url}}/canteen/payments/stripe/verify/cs_test_a0PTr9aUh1yDIGNljTDeMZepjrwEjTJLyCffXHm1DAL1kxf67crnO3CDD6",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "canteen",
                 "payments",
                 "stripe",
@@ -1404,12 +2069,10 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/orders/c79a55ad-af46-4d42-b47b-33c8faeeef4d/cancel",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "canteen",
                 "orders",
                 "c79a55ad-af46-4d42-b47b-33c8faeeef4d",
@@ -1431,10 +2094,14 @@
             ],
             "url": {
               "raw": "{{base_url}}/canteen/kitchen/prep-summary?mealDate=2026-11-25&mealSlot=LUNCH",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "kitchen", "prep-summary"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "kitchen",
+                "prep-summary"
+              ],
               "query": [
                 {
                   "key": "mealDate",
@@ -1461,10 +2128,13 @@
             ],
             "url": {
               "raw": "{{base_url}}/canteen/ledger",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "ledger"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "ledger"
+              ]
             }
           },
           "response": []
@@ -1490,12 +2160,10 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/orders/016dda6d-c28d-44f7-8a72-1a2191825a06/status",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "canteen",
                 "orders",
                 "016dda6d-c28d-44f7-8a72-1a2191825a06",
@@ -1526,10 +2194,14 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/orders/redeem",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "orders", "redeem"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "orders",
+                "redeem"
+              ]
             }
           },
           "response": []
@@ -1566,10 +2238,13 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/complaints",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
-              "path": ["api", "v1", "canteen", "complaints"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "canteen",
+                "complaints"
+              ]
             }
           },
           "response": []
@@ -1595,12 +2270,10 @@
             },
             "url": {
               "raw": "{{base_url}}/canteen/complaints/36428388-d93c-42ea-b57e-01c605538002/resolve",
-              "protocol": "http",
-              "host": ["localhost"],
-              "port": "5000",
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
-                "api",
-                "v1",
                 "canteen",
                 "complaints",
                 "36428388-d93c-42ea-b57e-01c605538002",
@@ -1616,38 +2289,46 @@
   "variable": [
     {
       "key": "json_web_token_0ejs",
-      "secret": true
+      "value": ""
     },
     {
       "key": "json_web_token_035x",
-      "secret": true
+      "value": ""
     },
     {
       "key": "json_web_token_0mxq",
-      "secret": true
+      "value": ""
     },
     {
       "key": "json_web_token_11zm",
-      "secret": true
+      "value": ""
     },
     {
       "key": "json_web_token_17rh",
-      "secret": true
+      "value": ""
     },
     {
       "key": "json_web_token_0fj8",
-      "secret": true
+      "value": ""
     },
     {
       "key": "json_web_token_0tfv",
-      "secret": true
+      "value": ""
     },
     {
       "key": "json_web_token_0p7k",
-      "secret": true
+      "value": ""
     },
     {
       "key": "json_web_token_13ic",
+      "value": ""
+    },
+    {
+      "key": "json_web_token_07z8",
+      "secret": true
+    },
+    {
+      "key": "json_web_token_0grq",
       "secret": true
     }
   ]
